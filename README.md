@@ -1,18 +1,13 @@
 ## UnBot for AzerothCore Module
 
-一个基于 UnBot 插件修改的机器人控制插件，作为 AzerothCore 机器人模组的配套插件，方便玩家控制机器人
+A bot control plugin modified based on the UnBot plugin. As a supporting plugin for the AzerothCore Playerbot module, it is convenient for players to control robots
 
-目前仅对中文客户端有较好支持。
+Installation method: Put UnBot in the Interface/AddOns/ directory
 
-安装方式：将 UnBot 和 YssBossLoot 放至 Interface/AddOns/ 目录下
-
-插件界面展示：
+Plugin interface display:
 
 ![](docs/display.png)
 
-添加指定职业机器人：
+Add a robot of a specific profession:
 
 ![](docs/addclass.png)
-
-
-

@@ -1,0 +1,680 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+  <Button name="MemberBarTemplate" virtual="true">
+	<Size>
+	  <AbsDimension x="250" y="10" />
+	</Size>
+	<Anchors>
+	  <Anchor point="TOPLEFT">
+		<Offset>
+		  <AbsDimension x="10" y="-10" />
+		</Offset>
+	  </Anchor>
+	</Anchors>
+	<NormalTexture file="interface\buttons\ui-listbox-highlight" alphaMode="ADD">
+	  <TexCoords left="0" right="0" top="0" bottom="0" />
+	</NormalTexture>
+	<PushedTexture file="interface\buttons\greengrad64" alphaMode="ADD">
+	  <TexCoords left="0" right="1" top="0" bottom="1" />
+	</PushedTexture>
+	<HighlightTexture file="interface\buttons\ui-listbox-highlight" alphaMode="ADD">
+	  <TexCoords left="0" right="1" top="0" bottom="1" />
+	</HighlightTexture>
+	<ButtonText name="$parentText">
+	  <FontHeight>
+		<AbsValue val="10" />
+	  </FontHeight>
+	</ButtonText>
+	<NormalFont style="GameFontNormal" />
+	<HighlightFont style="GameFontHighlight" />
+	<DisabledFont style="GameFontDisable" />
+	<Scripts>
+		<OnClick>
+			if (self.unit ~= nil and self.unit[1] ~= nil) then
+				SendChatMessage(".playerbot bot add "..self.unit[1], "SAY");
+			end
+		</OnClick>
+		<OnMouseUp>
+			if ( arg1 == "RightButton" ) then
+				if (self.unit ~= nil and self.unit[1] ~= nil) then
+					if (UnitInParty(self.unit[1]) == nil and UnitInRaid(self.unit[1]) == nil) then
+						InviteUnit(self.unit[1]);
+					else
+						DisplayInfomation(self.unit[1].." is already in your group");
+					end
+				end
+			end
+		</OnMouseUp>
+	</Scripts>
+  </Button>
+  <CheckButton name="OptionsTypeTemplate" checked="false" virtual="true">
+	<Size>
+	  <AbsDimension x="18" y="18" />
+	</Size>
+	<NormalTexture file="Interface\Buttons\UI-CheckBox-Up" />
+	<PushedTexture file="Interface\Buttons\UI-CheckBox-Down" />
+	<HighlightTexture file="Interface\Buttons\UI-CheckBox-Highlight" alphaMode="ADD" />
+	<CheckedTexture file="Interface\Buttons\UI-CheckBox-Check" />
+	<DisabledCheckedTexture file="Interface\Buttons\UI-CheckBox-Check-Disabled" />
+	<Scripts>
+		<OnLoad>
+			self.members = {};
+		</OnLoad>
+		<OnClick>
+			UnBotUpdateChecked(self);
+		</OnClick>
+	</Scripts>
+  </CheckButton>
+  <Frame name="OnlineFrame" movable="true" enableMouse="true" toplevel="true" frameStrata="LOW" hidden="true" enableKeyboard="true"> --Dodano enableKeyboard="true" za ESC close, vidi liniju 156-169
+	<TitleRegion setAllPoints="true"/>
+    <Size>
+      <AbsDimension x="490" y="237" />
+    </Size>
+    <Anchors>
+      <Anchor point="CENTER" relativeTo="UIParent" relativePoint="CENTER">
+        <Offset>
+          <AbsDimension x="0" y="0" />
+        </Offset>
+      </Anchor>
+    </Anchors>
+    <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+      <BackgroundInsets>
+        <AbsInset left="4" right="4" top="4" bottom="4" />
+      </BackgroundInsets>
+      <TileSize>
+        <AbsValue val="12" />
+      </TileSize>
+      <EdgeSize>
+        <AbsValue val="12" />
+      </EdgeSize>
+    </Backdrop>
+    <Layers>
+      <Layer>
+        <Texture name="$parentTitleBorder" file="Interface\DialogFrame\UI-DialogBox-Header">
+          <Size>
+            <AbsDimension x="105" y="32" />
+          </Size>
+          <Anchors>
+            <Anchor point="TOP">
+              <Offset>
+                <AbsDimension x="0" y="15" />
+              </Offset>
+            </Anchor>
+          </Anchors>
+          <TexCoords left="0.2" right="0.8" top="0" bottom="0.6" />
+        </Texture>
+        <FontString name="$parentTitleString" font="Fonts\FRIZQT__.TTF" text="Manage Bots">
+          <Size>
+            <AbsDimension x="140" y="0" />
+          </Size>
+          <Anchors>
+            <Anchor point="TOP">
+              <Offset>
+                <AbsDimension x="0" y="3" />
+              </Offset>
+            </Anchor>
+          </Anchors>
+          <FontHeight>
+            <AbsValue val="10" />
+          </FontHeight>
+          <Color r="1" g="0" b="0" />
+          <Shadow>
+            <Color r="0" g="0" b="0" />
+            <Offset>
+              <AbsDimension x="1" y="-1" />
+            </Offset>
+          </Shadow>
+        </FontString>
+      </Layer>
+    </Layers>
+	<Scripts>
+		<OnLoad>
+			self.scrollFrame = nil;
+			self.slider = nil;
+			self.child = nil;
+			self.options = {};
+		</OnLoad>
+		<OnShow>
+			UnBotShowOnlineFrame();
+		</OnShow>
+	</Scripts>
+    <Frames>
+      <Button name="$parentClose" inherits="UIPanelCloseButton">
+        <Size>
+          <AbsDimension x="22" y="22" />
+        </Size>
+        <Anchors>
+          <Anchor point="TOPLEFT">
+            <Offset>
+              <AbsDimension x="466" y="-2" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <NormalFont style="GameFontNormal" />
+        <HighlightFont style="GameFontHighlight" />
+        <DisabledFont style="GameFontDisable" />
+		-- ESC KEY
+		<Scripts>
+			<OnLoad>
+				-- Register the ESCAPE key to trigger the close function
+				local parentFrame = self:GetParent()
+				parentFrame:SetScript("OnKeyDown", function(_, key)
+					if key == "ESCAPE" then
+						parentFrame:Hide() -- Closes the parent frame
+					end
+				end)
+				parentFrame:EnableKeyboard(true) -- Enables keyboard input for the parent frame     
+			</OnLoad>
+		</Scripts>
+		-- ESC KEY END
+      </Button>
+      <Frame name="$parentHelpLabel">
+        <Size>
+          <AbsDimension x="447" y="20" />
+        </Size>
+        <Anchors>
+          <Anchor point="TOP">
+            <Offset>
+              <AbsDimension x="0" y="-15" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer>
+            <FontString name="$parentLabel" font="Fonts\FRIZQT__.TTF" text="Click the left mouse button to bring the bot online, and right click to invite it to your group"> <!-- Needs correction -->
+              <Anchors>
+                <Anchor point="BOTTOMRIGHT" />
+                <Anchor point="TOPLEFT" />
+              </Anchors>
+              <FontHeight>
+                <AbsValue val="10" />
+              </FontHeight>
+              <Color r="1" g="0.75" b="0" />
+              <Shadow>
+                <Color r="0" g="0" b="0" />
+                <Offset>
+                  <AbsDimension x="1" y="-1" />
+                </Offset>
+              </Shadow>
+            </FontString>
+          </Layer>
+        </Layers>
+      </Frame>
+      <ScrollFrame name="$parentListBox" enableMouse="true" EnableMouseWheel="true">
+        <Size>
+          <AbsDimension x="412" y="173" />
+        </Size>
+        <Anchors>
+          <Anchor point="TOPLEFT">
+            <Offset>
+              <AbsDimension x="150" y="-40" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+		<Scripts>
+			<OnLoad>
+				OnlineFrame.scrollFrame = self;
+			</OnLoad>
+			<OnMouseWheel>
+				local at = OnlineFrame.slider:GetValue();
+				if (arg1 == 1) then
+					OnlineFrame.slider:SetValue(at + (-1) * OnlineFrame.slider:GetValueStep());
+				elseif (arg1 == -1) then
+					OnlineFrame.slider:SetValue(at + OnlineFrame.slider:GetValueStep());
+				end
+			</OnMouseWheel>
+		</Scripts>
+        <Frames>
+          <Slider name="OnlineFrameSlider" minValue="0" maxValue="100" defaultValue="0" valueStep="5">
+            <Size>
+              <AbsDimension x="10" y="174" />
+            </Size>
+            <Anchors>
+              <Anchor point="TOPLEFT">
+                <Offset>
+                  <AbsDimension x="320" y="1" />
+                </Offset>
+              </Anchor>
+            </Anchors>
+            <Backdrop bgFile="Interface\Buttons\UI-SliderBar-Background" edgeFile="Interface\Buttons\UI-SliderBar-Border" tile="true">
+              <BackgroundInsets>
+                <AbsInset left="1" right="1" top="2" bottom="2" />
+              </BackgroundInsets>
+              <TileSize>
+                <AbsValue val="4" />
+              </TileSize>
+              <EdgeSize>
+                <AbsValue val="4" />
+              </EdgeSize>
+            </Backdrop>
+            <HitRectInsets>
+              <AbsInset left="0" right="0" top="-10" bottom="-10" />
+            </HitRectInsets>
+            <ThumbTexture name="$parentThumb" file="interface\buttons\ui-grouploot-de-up">
+              <Size>
+                <AbsDimension x="20" y="20" />
+              </Size>
+            </ThumbTexture>
+			<Scripts>
+				<OnLoad>
+					OnlineFrame.slider = self;
+				</OnLoad>
+				<OnValueChanged>
+          if (OnlineFrame.scrollFrame ~= nil) then
+            OnlineFrame.scrollFrame:SetVerticalScroll(self:GetValue());
+          end
+        </OnValueChanged>
+			</Scripts>
+          </Slider>
+        </Frames>
+      </ScrollFrame>
+      <CheckButton name="OnlineFrameWarrior" inherits="OptionsTypeTemplate" gameclasstype="WARRIOR">
+        <Anchors>
+          <Anchor point="TOPLEFT">
+            <Offset>
+              <AbsDimension x="19" y="-56" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer>
+            <FontString name="$parentText" font="Fonts\FRIZQT__.TTF" text="Warrior">
+              <Anchors>
+                <Anchor point="LEFT" relativePoint="RIGHT">
+                  <Offset>
+                    <AbsDimension x="-1" y="0" />
+                  </Offset>
+                </Anchor>
+              </Anchors>
+              <FontHeight>
+                <AbsValue val="9" />
+              </FontHeight>
+              <Color r="1" g="0.8196079" b="0" />
+              <Shadow>
+                <Color r="0" g="0" b="0" />
+                <Offset>
+                  <AbsDimension x="1" y="-1" />
+                </Offset>
+              </Shadow>
+            </FontString>
+          </Layer>
+        </Layers>
+		<Scripts>
+			<OnShow>
+				self.gameclasstype = "WARRIOR";
+			</OnShow>
+		</Scripts>
+      </CheckButton>
+      <CheckButton name="OnlineFrameFriend" inherits="OptionsTypeTemplate" gameclasstype="FRIENDS">
+        <Anchors>
+          <Anchor point="TOPLEFT">
+            <Offset>
+              <AbsDimension x="19" y="-40" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer>
+            <FontString name="$parentText" font="Fonts\FRIZQT__.TTF" text="Friends list">
+              <Anchors>
+                <Anchor point="LEFT" relativePoint="RIGHT">
+                  <Offset>
+                    <AbsDimension x="-1" y="0" />
+                  </Offset>
+                </Anchor>
+              </Anchors>
+              <FontHeight>
+                <AbsValue val="10" />
+              </FontHeight>
+              <Color r="1" g="0.8196079" b="0" />
+              <Shadow>
+                <Color r="0" g="0" b="0" />
+                <Offset>
+                  <AbsDimension x="1" y="-1" />
+                </Offset>
+              </Shadow>
+            </FontString>
+          </Layer>
+        </Layers>
+		<Scripts>
+			<OnShow>
+				self.gameclasstype = "FRIENDS";
+			</OnShow>
+		</Scripts>
+      </CheckButton>
+      <CheckButton name="OnlineFramePaladin" inherits="OptionsTypeTemplate" gameclasstype="PALADIN">
+        <Anchors>
+          <Anchor point="TOPLEFT">
+            <Offset>
+              <AbsDimension x="19" y="-72" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer>
+            <FontString name="$parentText" font="Fonts\FRIZQT__.TTF" text="Paladin">
+              <Anchors>
+                <Anchor point="LEFT" relativePoint="RIGHT">
+                  <Offset>
+                    <AbsDimension x="-1" y="0" />
+                  </Offset>
+                </Anchor>
+              </Anchors>
+              <FontHeight>
+                <AbsValue val="9" />
+              </FontHeight>
+              <Color r="1" g="0.8196079" b="0" />
+              <Shadow>
+                <Color r="0" g="0" b="0" />
+                <Offset>
+                  <AbsDimension x="1" y="-1" />
+                </Offset>
+              </Shadow>
+            </FontString>
+          </Layer>
+        </Layers>
+		<Scripts>
+			<OnShow>
+				self.gameclasstype = "PALADIN";
+			</OnShow>
+		</Scripts>
+      </CheckButton>
+      <CheckButton name="OnlineFrameRogue" inherits="OptionsTypeTemplate" gameclasstype="ROGUE">
+        <Anchors>
+          <Anchor point="TOPLEFT">
+            <Offset>
+              <AbsDimension x="19" y="-88" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer>
+            <FontString name="$parentText" font="Fonts\FRIZQT__.TTF" text="Rogue">
+              <Anchors>
+                <Anchor point="LEFT" relativePoint="RIGHT">
+                  <Offset>
+                    <AbsDimension x="-1" y="0" />
+                  </Offset>
+                </Anchor>
+              </Anchors>
+              <FontHeight>
+                <AbsValue val="9" />
+              </FontHeight>
+              <Color r="1" g="0.8196079" b="0" />
+              <Shadow>
+                <Color r="0" g="0" b="0" />
+                <Offset>
+                  <AbsDimension x="1" y="-1" />
+                </Offset>
+              </Shadow>
+            </FontString>
+          </Layer>
+        </Layers>
+		<Scripts>
+			<OnShow>
+				self.gameclasstype = "ROGUE";
+			</OnShow>
+		</Scripts>
+      </CheckButton>
+      <CheckButton name="OnlineFrameDruid" inherits="OptionsTypeTemplate" gameclasstype="DRUID">
+        <Anchors>
+          <Anchor point="TOPLEFT">
+            <Offset>
+              <AbsDimension x="19" y="-104" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer>
+            <FontString name="$parentText" font="Fonts\FRIZQT__.TTF" text="Druid">
+              <Anchors>
+                <Anchor point="LEFT" relativePoint="RIGHT">
+                  <Offset>
+                    <AbsDimension x="-1" y="0" />
+                  </Offset>
+                </Anchor>
+              </Anchors>
+              <FontHeight>
+                <AbsValue val="9" />
+              </FontHeight>
+              <Color r="1" g="0.8196079" b="0" />
+              <Shadow>
+                <Color r="0" g="0" b="0" />
+                <Offset>
+                  <AbsDimension x="1" y="-1" />
+                </Offset>
+              </Shadow>
+            </FontString>
+          </Layer>
+        </Layers>
+		<Scripts>
+			<OnShow>
+				self.gameclasstype = "DRUID";
+			</OnShow>
+		</Scripts>
+      </CheckButton>
+      <CheckButton name="OnlineFrameHunter" inherits="OptionsTypeTemplate" gameclasstype="HUNTER">
+        <Anchors>
+          <Anchor point="TOPLEFT">
+            <Offset>
+              <AbsDimension x="19" y="-120" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer>
+            <FontString name="$parentText" font="Fonts\FRIZQT__.TTF" text="Hunter">
+              <Anchors>
+                <Anchor point="LEFT" relativePoint="RIGHT">
+                  <Offset>
+                    <AbsDimension x="-1" y="0" />
+                  </Offset>
+                </Anchor>
+              </Anchors>
+              <FontHeight>
+                <AbsValue val="9" />
+              </FontHeight>
+              <Color r="1" g="0.8196079" b="0" />
+              <Shadow>
+                <Color r="0" g="0" b="0" />
+                <Offset>
+                  <AbsDimension x="1" y="-1" />
+                </Offset>
+              </Shadow>
+            </FontString>
+          </Layer>
+        </Layers>
+		<Scripts>
+			<OnShow>
+				self.gameclasstype = "HUNTER";
+			</OnShow>
+		</Scripts>
+      </CheckButton>
+      <CheckButton name="OnlineFrameShaman" inherits="OptionsTypeTemplate" gameclasstype="SHAMAN">
+        <Anchors>
+          <Anchor point="TOPLEFT">
+            <Offset>
+              <AbsDimension x="19" y="-136" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer>
+            <FontString name="$parentText" font="Fonts\FRIZQT__.TTF" text="Shaman">
+              <Anchors>
+                <Anchor point="LEFT" relativePoint="RIGHT">
+                  <Offset>
+                    <AbsDimension x="-1" y="0" />
+                  </Offset>
+                </Anchor>
+              </Anchors>
+              <FontHeight>
+                <AbsValue val="9" />
+              </FontHeight>
+              <Color r="1" g="0.8196079" b="0" />
+              <Shadow>
+                <Color r="0" g="0" b="0" />
+                <Offset>
+                  <AbsDimension x="1" y="-1" />
+                </Offset>
+              </Shadow>
+            </FontString>
+          </Layer>
+        </Layers>
+		<Scripts>
+			<OnShow>
+				self.gameclasstype = "SHAMAN";
+			</OnShow>
+		</Scripts>
+      </CheckButton>
+      <CheckButton name="OnlineFrameMage" inherits="OptionsTypeTemplate" gameclasstype="MAGE">
+        <Anchors>
+          <Anchor point="TOPLEFT">
+            <Offset>
+              <AbsDimension x="19" y="-152" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer>
+            <FontString name="$parentText" font="Fonts\FRIZQT__.TTF" text="Mage">
+              <Anchors>
+                <Anchor point="LEFT" relativePoint="RIGHT">
+                  <Offset>
+                    <AbsDimension x="-1" y="0" />
+                  </Offset>
+                </Anchor>
+              </Anchors>
+              <FontHeight>
+                <AbsValue val="9" />
+              </FontHeight>
+              <Color r="1" g="0.8196079" b="0" />
+              <Shadow>
+                <Color r="0" g="0" b="0" />
+                <Offset>
+                  <AbsDimension x="1" y="-1" />
+                </Offset>
+              </Shadow>
+            </FontString>
+          </Layer>
+        </Layers>
+		<Scripts>
+			<OnShow>
+				self.gameclasstype = "MAGE";
+			</OnShow>
+		</Scripts>
+      </CheckButton>
+      <CheckButton name="OnlineFrameWarlock" inherits="OptionsTypeTemplate" gameclasstype="WARLOCK">
+        <Anchors>
+          <Anchor point="TOPLEFT">
+            <Offset>
+              <AbsDimension x="19" y="-168" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer>
+            <FontString name="$parentText" font="Fonts\FRIZQT__.TTF" text="Warlock">
+              <Anchors>
+                <Anchor point="LEFT" relativePoint="RIGHT">
+                  <Offset>
+                    <AbsDimension x="-1" y="0" />
+                  </Offset>
+                </Anchor>
+              </Anchors>
+              <FontHeight>
+                <AbsValue val="9" />
+              </FontHeight>
+              <Color r="1" g="0.8196079" b="0" />
+              <Shadow>
+                <Color r="0" g="0" b="0" />
+                <Offset>
+                  <AbsDimension x="1" y="-1" />
+                </Offset>
+              </Shadow>
+            </FontString>
+          </Layer>
+        </Layers>
+		<Scripts>
+			<OnShow>
+				self.gameclasstype = "WARLOCK";
+			</OnShow>
+		</Scripts>
+      </CheckButton>
+      <CheckButton name="OnlineFramePriest" inherits="OptionsTypeTemplate" gameclasstype="PRIEST">
+        <Anchors>
+          <Anchor point="TOPLEFT">
+            <Offset>
+              <AbsDimension x="19" y="-184" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer>
+            <FontString name="$parentText" font="Fonts\FRIZQT__.TTF" text="Priest">
+              <Anchors>
+                <Anchor point="LEFT" relativePoint="RIGHT">
+                  <Offset>
+                    <AbsDimension x="-1" y="0" />
+                  </Offset>
+                </Anchor>
+              </Anchors>
+              <FontHeight>
+                <AbsValue val="9" />
+              </FontHeight>
+              <Color r="1" g="0.8196079" b="0" />
+              <Shadow>
+                <Color r="0" g="0" b="0" />
+                <Offset>
+                  <AbsDimension x="1" y="-1" />
+                </Offset>
+              </Shadow>
+            </FontString>
+          </Layer>
+        </Layers>
+		<Scripts>
+			<OnShow>
+				self.gameclasstype = "PRIEST";
+			</OnShow>
+		</Scripts>
+      </CheckButton>
+      <CheckButton name="OnlineFrameDK" inherits="OptionsTypeTemplate" gameclasstype="DEATHKIGHT">
+        <Anchors>
+          <Anchor point="TOPLEFT">
+            <Offset>
+              <AbsDimension x="19" y="-200" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer>
+            <FontString name="$parentText" font="Fonts\FRIZQT__.TTF" text="Death Knight">
+              <Anchors>
+                <Anchor point="LEFT" relativePoint="RIGHT">
+                  <Offset>
+                    <AbsDimension x="-1" y="0" />
+                  </Offset>
+                </Anchor>
+              </Anchors>
+              <FontHeight>
+                <AbsValue val="9" />
+              </FontHeight>
+              <Color r="1" g="0.8196079" b="0" />
+              <Shadow>
+                <Color r="0" g="0" b="0" />
+                <Offset>
+                  <AbsDimension x="1" y="-1" />
+                </Offset>
+              </Shadow>
+            </FontString>
+          </Layer>
+        </Layers>
+		<Scripts>
+			<OnShow>
+				self.gameclasstype = "DEATHKIGHT";
+			</OnShow>
+		</Scripts>
+      </CheckButton>
+    </Frames>
+  </Frame>
+</Ui>

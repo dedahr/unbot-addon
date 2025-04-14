@@ -8,6 +8,6 @@ Plugin interface display:
 
 ![](docs/display.png)
 
-Add a robot of a specific profession:
+Add a bot of a specific profession:
 
 ![](docs/addclass.png)

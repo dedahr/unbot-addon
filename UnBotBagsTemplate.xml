@@ -22,7 +22,7 @@
         </Scripts>
     </CheckButton>
     <Frame name="UnBotBagsFrameHeadFrame" toplevel="true" frameStrata="LOW" virtual="true" hidden="false">
-        <Size x="330" y="32"/>
+        <Size x="830" y="32"/>
         <Anchors>
             <Anchor point="TOPLEFT" relativePoint="TOPLEFT"/>
         </Anchors>
@@ -35,7 +35,7 @@
     </Frame>
     <Frame name="UnBotBagsFrame" movable="true" enableMouse="true" toplevel="true" frameStrata="LOW" virtual="true" hidden="false">
         <TitleRegion setAllPoints="true"/>
-        <Size x="330" y="208"/>
+        <Size x="830" y="458"/>
         <Anchors>
             <Anchor point="BOTTOM" relativePoint="CENTER"/>
         </Anchors>
@@ -84,4 +84,14 @@
             </OnUpdate>
         </Scripts>        
     </Frame>
+    <!-- Input Box Template -->
+    <EditBox name="UnBotInputBoxTemplate" virtual="true">
+        <Size>
+            <AbsDimension x="200" y="25"/>
+        </Size>        
+        <Anchors>
+            <Anchor point="TOPLEFT"/>
+        </Anchors>
+        <FontString inherits="GameFontNormal"/>        
+    </EditBox>
 </Ui>

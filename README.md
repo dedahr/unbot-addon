@@ -11,3 +11,11 @@ Plugin interface display:
 Add a bot of a specific profession:
 
 ![](docs/addclass.png)
+
+* Removed all external dependencies
+* Strategy redone
+* Some bugs fixed
+* Obosolete bot commands fixed to follow current PB state
+* Some personal flavoring added to Inventory and Icons forms
+* and whtever I forgot to remember....
+* en-US or en-GB version only

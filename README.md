@@ -18,3 +18,4 @@ Add a bot of a specific profession:
 * Obosolete bot commands fixed to follow current PB state
 * Some personal flavoring added to Inventory and Icons forms
 * and whtever I forgot to remember....
+* en-US or en-GB version only

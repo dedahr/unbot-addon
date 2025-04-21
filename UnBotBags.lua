@@ -522,17 +522,17 @@ local function CreateOptionByParent(fromParent, flushFunc, bagType)
 		fromParent:SetParent(nil);
 	end);
 
-	-- Enable keyboard interaction for the parent frame
-	fromParent:EnableKeyboard(true);
+	-- -- Enable keyboard interaction for the parent frame
+	-- fromParent:EnableKeyboard(true);
 
-	-- Set a script to handle keypress events
-	fromParent:SetScript("OnKeyDown", function(self, key)
-		if key == "ESCAPE" then
-			if closeFrame:IsShown() then
-				closeFrame:Click(); -- Simulate a mouse click on the close button
-			end
-		end
-	end);
+	-- -- Set a script to handle keypress events
+	-- fromParent:SetScript("OnKeyDown", function(self, key)
+		-- if key == "ESCAPE" then
+			-- if closeFrame:IsShown() then
+				-- closeFrame:Click(); -- Simulate a mouse click on the close button
+			-- end
+		-- end
+	-- end);
 end
 
 function PickPrevOrNextButton(parentFrame, isPrev)

@@ -103,18 +103,17 @@ local function CreateStrategyFrame(name)
 		strategyFrame:SetParent(nil)
 	end);
 	
-	-- Make the strategyFrame respond to keypresses
-	strategyFrame:EnableKeyboard(true)
+	-- -- Make the strategyFrame respond to keypresses
+	-- strategyFrame:EnableKeyboard(true)
 
-	-- Set a script to handle keypress events
-	strategyFrame:SetScript("OnKeyDown", function(self, key)
-		if key == "ESCAPE" then
-			if closeFrame:IsShown() then
-				closeFrame:Click() -- Simulate a mouse click on the close button
-			end
-		end
-	end)
-
+	-- -- Set a script to handle keypress events
+	-- strategyFrame:SetScript("OnKeyDown", function(self, key)
+		-- if key == "ESCAPE" then
+			-- if closeFrame:IsShown() then
+				-- closeFrame:Click() -- Simulate a click on the close button
+			-- end
+		-- end
+	-- end)
 		
 	return strategyFrame;
 end

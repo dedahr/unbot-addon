@@ -1,18 +1,17 @@
-
 function UnBotSplit(str, split_char)
-    local sub_str_tab = {};
-    while (true) do
-        local pos = string.find(str, split_char);
-        if (not pos) then
-            sub_str_tab[#sub_str_tab + 1] = str;
-            break;
-        end
-        local sub_str = string.sub(str, 1, pos - 1);
-        sub_str_tab[#sub_str_tab + 1] = sub_str;
-        str = string.sub(str, pos + 1, #str);
-    end
+	local sub_str_tab = {};
+	while (true) do
+		local pos = string.find(str, split_char);
+		if (not pos) then
+			sub_str_tab[#sub_str_tab + 1] = str;
+			break;
+		end
+		local sub_str = string.sub(str, 1, pos - 1);
+		sub_str_tab[#sub_str_tab + 1] = sub_str;
+		str = string.sub(str, pos + 1, #str);
+	end
 
-    return sub_str_tab;
+	return sub_str_tab;
 end
 
 function UnBotCloseAll()
@@ -26,32 +25,32 @@ function UnBotCloseAll()
 	DisplayInfomation("Bar is now hidden. Use /unbot to toggle the bar.");
 end
 
-local function AddButton(name,fromParent,temp,gi,ci)
+local function AddButton(name, fromParent, temp, gi, ci)
 	if (fromParent == nil) then
 		return nil;
 	end
 	if (UnBotIconFiles[ci] == nil) then
 		return nil;
 	end
-	local newFrame = CreateFrame("Button",name..tostring(ci),fromParent.lastButton,temp);
+	local newFrame = CreateFrame("Button", name .. tostring(ci), fromParent.lastButton, temp);
 	newFrame.groupIndex = gi;
 	newFrame.comIndex = ci;
-	newFrame.Icon = newFrame:CreateTexture("UnBotSubIcon"..tostring(ci),"BACKGROUND");
+	newFrame.Icon = newFrame:CreateTexture("UnBotSubIcon" .. tostring(ci), "BACKGROUND");
 	newFrame.Icon:SetTexture(GetIconPathByIndex(UnBotIconFiles[ci]));
 	newFrame.Icon:SetAllPoints(newFrame);
 	newFrame.Icon:Show();
 	newFrame:Show();
 	newFrame:SetPushedTexture([[Interface\BUTTONS\UI-Quickslot-Depress]]);
-	newFrame:SetHighlightTexture([[Interface\Buttons\UI-Common-MouseHilight]],"ADD");
+	newFrame:SetHighlightTexture([[Interface\Buttons\UI-Common-MouseHilight]], "ADD");
 	fromParent.lastButton = newFrame;
-	if(fromParent.nextSubButtonIndex == 1) then
-		UpdateGroupButtonActive(gi,true);
-		if(UnBotCommandBarConfig[ci] == nil) then
-			local groupButton = _G["UnBotCommandButton"..tostring(newFrame.groupIndex)];
+	if (fromParent.nextSubButtonIndex == 1) then
+		UpdateGroupButtonActive(gi, true);
+		if (UnBotCommandBarConfig[ci] == nil) then
+			local groupButton = _G["UnBotCommandButton" .. tostring(newFrame.groupIndex)];
 			if (groupButton ~= nil) then
-				ResetCommandToAction(newFrame,groupButton.comIndex,false);
+				ResetCommandToAction(newFrame, groupButton.comIndex, false);
 			else
-				ResetCommandToAction(newFrame,ci,false);
+				ResetCommandToAction(newFrame, ci, false);
 			end
 		end
 	end
@@ -60,13 +59,13 @@ local function AddButton(name,fromParent,temp,gi,ci)
 end
 
 function InspectFrame_Show(unit)
-	if(InspectFrame) then
+	if (InspectFrame) then
 		DoInspectFrameShow(unit);
 	else
-		if( IsAddOnLoaded("Blizzard_InspectUI") == nil) then
+		if (IsAddOnLoaded("Blizzard_InspectUI") == nil) then
 			local loaded, reason = LoadAddOn("Blizzard_InspectUI");
-			if( loaded == nil) then
-				DisplayInfomation("Window initialization failed: "..reason);
+			if (loaded == nil) then
+				DisplayInfomation("Window initialization failed: " .. reason);
 			else
 				DoInspectFrameShow(unit);
 			end
@@ -75,44 +74,43 @@ function InspectFrame_Show(unit)
 end
 
 function DoInspectFrameShow(unit)
-	if(InspectFrame) then
+	if (InspectFrame) then
 		HideUIPanel(InspectFrame);
-		if ( CanInspect(unit, true) ) then
+		if (CanInspect(unit, true)) then
 			NotifyInspect(unit);
 			InspectFrame.unit = unit;
 			InspectSwitchTabs(1);
 			ShowUIPanel(InspectFrame);
 			InspectFrame_UpdateTalentTab();
-			DisplayInfomation("InspectFrame_Show "..UnitName(unit));
-		end	
+			DisplayInfomation("InspectFrame_Show " .. UnitName(unit));
+		end
 	end
 end
 
-
-
 function InitializeUnBotFrame()
 	DisplayInfomation("Initializing bot controller");
-	if(UnBotFrame.Inited == true) then
+	if (UnBotFrame.Inited == true) then
 		return;
 	end
 	UnBotFrame.Inited = true;
-	
+
 	if (UnBotCommandBarConfig == nil) then
 		UnBotCommandBarConfig = {};
 	end
-	for i=1, 10 do
-		UpdateGroupButtonActive(i,false);
+	for i = 1, 10 do
+		UpdateGroupButtonActive(i, false);
 	end
-	for i=1, #UnBotCommandToGroups do
+	for i = 1, #UnBotCommandToGroups do
 		if (UnBotExecuteCommand[i] ~= nil and UnBotExecuteCommand[i] ~= "") then
 			local toGroup = UnBotCommandToGroups[i];
-			local newFrame = AddButton("UnBotSubCommandButton",_G["UnBotSubFrame"..tostring(toGroup)],"UnBotCommandSubButtonTemplate",toGroup,i);
+			local newFrame = AddButton("UnBotSubCommandButton", _G["UnBotSubFrame" .. tostring(toGroup)],
+				"UnBotCommandSubButtonTemplate", toGroup, i);
 		end
 	end
 
-	for i=1, 10 do
-		local groupButton = _G["UnBotCommandButton"..tostring(i)];
-		ResetCommandToAction(groupButton, UnBotCommandBarConfig[i],false);
+	for i = 1, 10 do
+		local groupButton = _G["UnBotCommandButton" .. tostring(i)];
+		ResetCommandToAction(groupButton, UnBotCommandBarConfig[i], false);
 	end
 	UnBotUpdateHotkeys();
 
@@ -135,37 +133,37 @@ local function GetCommandTypeTextByType(typeIndex)
 	end
 end
 
-function CommandButton_OnEnter(self,index,btnType)
+function CommandButton_OnEnter(self, index, btnType)
 	GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT");
-	GameTooltip:AddLine(UnBotTooltipTitle[index],1,0,0,1);
-	GameTooltip:AddDoubleLine("Target:",GetCommandTypeTextByType(UnBotCommandType[index]),0,0,1,1,0,1);
-	GameTooltip:AddLine(UnBotTooltipHelp[index],0,1,0,1);
-	GameTooltip:AddLine(" ",1,1,1,1);
+	GameTooltip:AddLine(UnBotTooltipTitle[index], 1, 0, 0, 1);
+	GameTooltip:AddDoubleLine("Target:", GetCommandTypeTextByType(UnBotCommandType[index]), 0, 0, 1, 1, 0, 1);
+	GameTooltip:AddLine(UnBotTooltipHelp[index], 0, 1, 0, 1);
+	GameTooltip:AddLine(" ", 1, 1, 1, 1);
 	if (self.groupIndex > 0) then
-		GameTooltip:AddDoubleLine("Uses:",UnBotExecuteCommand[index],0,0.85,0.85,0,0.85,0.85);
+		GameTooltip:AddDoubleLine("Uses:", UnBotExecuteCommand[index], 0, 0.85, 0.85, 0, 0.85, 0.85);
 	end
-	GameTooltip:AddLine("LMB: Use",0.65,0.55,0,1);
+	GameTooltip:AddLine("LMB: Use", 0.65, 0.55, 0, 1);
 	if (self.groupIndex > 0) then
 		if (btnType == 1) then
-			GameTooltip:AddLine("RMB: Toggle button group",0.65,0.55,0,1);
+			GameTooltip:AddLine("RMB: Toggle button group", 0.65, 0.55, 0, 1);
 		elseif (btnType == 2) then
-			GameTooltip:AddLine("RMB: Set shortcut",0.65,0.55,0,1);
+			GameTooltip:AddLine("RMB: Set shortcut", 0.65, 0.55, 0, 1);
 		end
 	else
-		GameTooltip:AddLine("RMB: Hide the bar",0.65,0.55,0,1);
+		GameTooltip:AddLine("RMB: Hide the bar", 0.65, 0.55, 0, 1);
 	end
-	GameTooltip:AddDoubleLine("ID:",tostring(index),0,0,1,1,0,1);
+	GameTooltip:AddDoubleLine("ID:", tostring(index), 0, 0, 1, 1, 0, 1);
 	GameTooltip:AddTexture(GetIconPathByIndex(UnBotIconFiles[index]));
 	GameTooltip:Show();
 end
 
 function UnBotHideAllSubFrame()
-	for i=0, 10 do
-		local frameObject = _G["UnBotSubFrame"..tostring(i)];
+	for i = 0, 10 do
+		local frameObject = _G["UnBotSubFrame" .. tostring(i)];
 		if (frameObject ~= nil) then
 			frameObject:Hide();
 		end
-		local groupButton = _G["UnBotCommandButton"..tostring(i)];
+		local groupButton = _G["UnBotCommandButton" .. tostring(i)];
 		if (groupButton ~= nil) then
 			groupButton.showMenu = false;
 		end
@@ -173,7 +171,7 @@ function UnBotHideAllSubFrame()
 end
 
 function UnBotClearAllQRFrame()
-	for i=1, #(UnBotFrame.ShowedQRs) do
+	for i = 1, #(UnBotFrame.ShowedQRs) do
 		local qr = UnBotFrame.ShowedQRs[i];
 		qr.showTick = 0;
 		qr:Hide();
@@ -183,7 +181,7 @@ function UnBotClearAllQRFrame()
 end
 
 function UnBotClearAllStrategyFrame()
-	for i=1, #(UnBotFrame.ShowedStrategy) do
+	for i = 1, #(UnBotFrame.ShowedStrategy) do
 		local ss = UnBotFrame.ShowedStrategy[i];
 		ss:Hide();
 		ss:SetParent(nil);
@@ -192,16 +190,16 @@ function UnBotClearAllStrategyFrame()
 end
 
 function UnBotRemoveByQRFrame(targetQR)
-	for i=1, #(UnBotFrame.ShowedQRs) do
+	for i = 1, #(UnBotFrame.ShowedQRs) do
 		if (UnBotFrame.ShowedQRs[i]:GetName() == targetQR:GetName()) then
-			table.remove(UnBotFrame.ShowedQRs,i);
+			table.remove(UnBotFrame.ShowedQRs, i);
 			return;
 		end
 	end
 end
 
-function UpdateGroupButtonActive(index,show)
-	local groupButton = _G["UnBotCommandButton"..tostring(index)];
+function UpdateGroupButtonActive(index, show)
+	local groupButton = _G["UnBotCommandButton" .. tostring(index)];
 	if (groupButton == nil) then
 		return;
 	end
@@ -212,8 +210,8 @@ function UpdateGroupButtonActive(index,show)
 	end
 end
 
-function ResetCommandToAction(self,index,save)
-	local groupButton = _G["UnBotCommandButton"..tostring(self.groupIndex)];
+function ResetCommandToAction(self, index, save)
+	local groupButton = _G["UnBotCommandButton" .. tostring(self.groupIndex)];
 	if (groupButton == nil or index == nil) then
 		return;
 	end
@@ -229,7 +227,7 @@ function ResetCommandToAction(self,index,save)
 		UnBotCommandBarConfig[self.groupIndex] = index;
 	end
 
-	local subFrame = _G["UnBotSubFrame"..tostring(self.groupIndex)];
+	local subFrame = _G["UnBotSubFrame" .. tostring(self.groupIndex)];
 	groupButton.showMenu = false;
 	if (subFrame == nil) then
 		return;
@@ -243,10 +241,10 @@ function GetIconPathByIndex(index)
 end
 
 function UnBotUpdateHotkeys()
-	for i=1, 10 do
-		local groupButtonLabel = _G["UnBotCommandButton"..tostring(i).."Label"];
+	for i = 1, 10 do
+		local groupButtonLabel = _G["UnBotCommandButton" .. tostring(i) .. "Label"];
 		if (groupButtonLabel ~= nil) then
-			local bindingKey = GetBindingKey("CLICK UnBotCommandButton"..tostring(i)..":LeftButton");
+			local bindingKey = GetBindingKey("CLICK UnBotCommandButton" .. tostring(i) .. ":LeftButton");
 			if (bindingKey ~= nil) then
 				local keyText = GetBindingText(bindingKey, "KEY_", 1);
 				groupButtonLabel:SetText(keyText);
@@ -268,11 +266,11 @@ function UnBotUpdateHotkeys()
 end
 
 function DisplayInfomation(info)
-	DEFAULT_CHAT_FRAME:AddMessage("|cff00cccc"..info.."|r");--ChatFrame1
+	DEFAULT_CHAT_FRAME:AddMessage("|cff00cccc" .. info .. "|r"); --ChatFrame1
 end
 
 function CanAddToUnBotFrame(targetName)
-	for i=1, #(UnBotFrame.ShowedBags) do
+	for i = 1, #(UnBotFrame.ShowedBags) do
 		if (UnBotFrame.ShowedBags[i]:GetName() == targetName) then
 			return false;
 		end
@@ -281,7 +279,7 @@ function CanAddToUnBotFrame(targetName)
 end
 
 function AddToUnBotFrame(bagsFrame, targetName)
-	for i=1, #(UnBotFrame.ShowedBags) do
+	for i = 1, #(UnBotFrame.ShowedBags) do
 		if (UnBotFrame.ShowedBags[i]:GetName() == targetName) then
 			return false;
 		end
@@ -291,16 +289,16 @@ function AddToUnBotFrame(bagsFrame, targetName)
 end
 
 function RemoveFromUnBotFrame(bagsFrame)
-	for i=1, #(UnBotFrame.ShowedBags) do
+	for i = 1, #(UnBotFrame.ShowedBags) do
 		if (UnBotFrame.ShowedBags[i]:GetName() == bagsFrame:GetName()) then
-			table.remove(UnBotFrame.ShowedBags,i);
+			table.remove(UnBotFrame.ShowedBags, i);
 			return;
 		end
 	end
 end
 
 function AddToUnBotStrategyFrame(strategyFrame, targetName)
-	for i=1, #(UnBotFrame.ShowedStrategy) do
+	for i = 1, #(UnBotFrame.ShowedStrategy) do
 		if (UnBotFrame.ShowedStrategy[i]:GetName() == targetName) then
 			return false;
 		end
@@ -310,17 +308,17 @@ function AddToUnBotStrategyFrame(strategyFrame, targetName)
 end
 
 function RemoveFromStrategyFrame(strategyFrame)
-	for i=1, #(UnBotFrame.ShowedStrategy) do
+	for i = 1, #(UnBotFrame.ShowedStrategy) do
 		if (UnBotFrame.ShowedStrategy[i]:GetName() == strategyFrame:GetName()) then
-			table.remove(UnBotFrame.ShowedStrategy,i);
+			table.remove(UnBotFrame.ShowedStrategy, i);
 			return;
 		end
 	end
 end
 
 function UnBotEnableAllFrameFlushButton()
-	for i=1, #(UnBotFrame.ShowedBags) do
-		local flushButton = _G["BagsFrameFlush"..(UnBotFrame.ShowedBags[i]:GetName())]
+	for i = 1, #(UnBotFrame.ShowedBags) do
+		local flushButton = _G["BagsFrameFlush" .. (UnBotFrame.ShowedBags[i]:GetName())]
 		if (flushButton ~= nil) then
 			flushButton:Enable();
 		end
@@ -328,8 +326,8 @@ function UnBotEnableAllFrameFlushButton()
 end
 
 function UnBotDisableAllFrameFlushButton()
-	for i=1, #(UnBotFrame.ShowedBags) do
-		local flushButton = _G["BagsFrameFlush"..(UnBotFrame.ShowedBags[i]:GetName())]
+	for i = 1, #(UnBotFrame.ShowedBags) do
+		local flushButton = _G["BagsFrameFlush" .. (UnBotFrame.ShowedBags[i]:GetName())]
 		if (flushButton ~= nil) then
 			flushButton:Disable();
 		end
@@ -350,7 +348,7 @@ function SubCommandButton_OnLeftClick(index)
 		end
 	end
 	if (UnBotCommandType[index] == nil) then
-		DisplayInfomation("Could not find order "..tostring(index));
+		DisplayInfomation("Could not find order " .. tostring(index));
 		return;
 	end
 	local realize = getglobal("UnBotCommandRealize");
@@ -371,9 +369,6 @@ function SubCommandButton_OnLeftClick(index)
 				DisplayInfomation("The target is not in your group.");
 				return;
 			end
-			-- if (not IsRealPartyLeader()) then
-			-- 	DisplayInfomation("你当前不是队伍领袖。");
-			-- else
 			SendChatMessage(UnBotExecuteCommand[index], "WHISPER", nil, targetName);
 			-- end
 		elseif (UnBotCommandType[index] == 3) then
@@ -382,19 +377,12 @@ function SubCommandButton_OnLeftClick(index)
 				DisplayInfomation("You have no target.");
 				return;
 			end
-			-- if (not IsRealPartyLeader()) then
-			-- 	DisplayInfomation("你当前不是队伍领袖。");
-			-- else
 			SendChatMessage(UnBotExecuteCommand[index], "PARTY");
 			-- end
 		elseif (UnBotCommandType[index] == 4) then
-			-- if (not IsRealPartyLeader()) then
-			-- 	DisplayInfomation("你当前不是队伍领袖。");
-			-- else
 			SendChatMessage(UnBotExecuteCommand[index], "PARTY");
-			-- end
 		else
-			DisplayInfomation("You click button index "..tostring(index)..", execute "..UnBotExecuteCommand[index]);
+			DisplayInfomation("You click button index " .. tostring(index) .. ", execute " .. UnBotExecuteCommand[index]);
 		end
 	end
 end
@@ -415,11 +403,11 @@ function SetUnBotScale()
 		UnBotFrame:SetScale(UnBotScaleConfig);
 		OnlineFrame:SetScale(UnBotScaleConfig);
 		NPCFrame:SetScale(UnBotScaleConfig);
-		for i=1, #(UnBotFrame.ShowedStrategy) do
+		for i = 1, #(UnBotFrame.ShowedStrategy) do
 			local ss = UnBotFrame.ShowedStrategy[i];
 			ss:SetScale(UnBotScaleConfig);
 		end
-		for i=1, #(UnBotFrame.ShowedBags) do
+		for i = 1, #(UnBotFrame.ShowedBags) do
 			local ss = UnBotFrame.ShowedBags[i];
 			ss:SetScale(UnBotScaleConfig);
 		end

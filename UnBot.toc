@@ -28,3 +28,4 @@ StrategyFrame.xml
 StrategyTips.lua
 ImplantInspectFrame.lua
 EquipInventory.xml
+UnbotCharEquip.lua

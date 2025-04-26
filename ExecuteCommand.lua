@@ -1,5 +1,5 @@
-﻿function CommandUnBotCharFrame(index)
-	ToggleCharacterFrame() -- Poziv funkcije iz UnbotCharEquip.lua
+﻿function CommandBotCharEquipmentManagerFrame(index)
+	BotEquippmentManagerMainFrame()
 end
 
 function CommandUnBotSetting(index)

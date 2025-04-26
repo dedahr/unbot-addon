@@ -1,4 +1,4 @@
-local chatListenerMainBag = nil -- Global declaration ensures it persists across
+local chatBotInventoryListener = nil
 
 local playerT = ""
 -- Define the mapping for slots
@@ -7,6 +7,7 @@ local slotMap = {
     ["INVTYPE_NECK"] = 2,
     ["INVTYPE_SHOULDER"] = 3,
     ["INVTYPE_CHEST"] = 4,
+    ["INVTYPE_ROBE"] = 4,
     ["INVTYPE_WAIST"] = 5,
     ["INVTYPE_LEGS"] = 6,
     ["INVTYPE_FEET"] = 7,
@@ -14,14 +15,17 @@ local slotMap = {
     ["INVTYPE_HAND"] = 9,
     ["INVTYPE_FINGER"] = 10,
     ["INVTYPE_TRINKET"] = 12,
-    ["INVTYPE_BACK"] = 14,
+    ["INVTYPE_CLOAK"] = 14,
     ["INVTYPE_WEAPON"] = 15,
-    ["INVTYPE_SHIELD"] = 16,
+    ["INVTYPE_WEAPONMAINHAND"] = 15,
     ["INVTYPE_2HWEAPON"] = 15,
+    ["INVTYPE_SHIELD"] = 16,
+    ["INVTYPE_WEAPONOFFHAND"] = 16,
     ["INVTYPE_RANGED"] = 17,
     ["INVTYPE_RANGEDRIGHT"] = 17,
-    ["INVTYPE_OFFHAND"] = 16,
-    ["INVTYPE_MAINHAND"] = 15
+    ["INVTYPE_THROWN"] = 17,
+    ["INVTYPE_RELIC"] = 17,
+    ["INVTYPE_HOLDABLE"] = 17,
 }
 local itemData = {}
 
@@ -52,11 +56,10 @@ local wearableItems = {}
 
 -- We don't want to requery on every eq change
 local equipmentLoaded = false
--- Table to store temporary affected slots on swap
 local equipmentTable = {}
-tempSlots = {}
+tempSlots = {} -- Table to store temporary affected slots on swap
 
---Dubug functions, not used
+-- Define the function at the top of your script or before it's needed
 local function PrintTableContents(label, tbl)
     print(label)
     if tbl then
@@ -68,7 +71,28 @@ local function PrintTableContents(label, tbl)
     end
 end
 
---Fill equipment table from inspect unit
+function WaitAndCheckFrameHidden(frame, timeout, callback)
+    local startTime = GetTime() -- Record the start time
+
+    -- Create a temporary frame for OnUpdate tracking
+    local checkerFrame = CreateFrame("Frame")
+    checkerFrame:SetScript("OnUpdate", function(self, elapsed)
+        if not frame:IsShown() then
+            -- Frame is hidden, call the callback with true
+            callback(true)
+            self:SetScript("OnUpdate", nil) -- Stop the OnUpdate script
+            self:Hide()                     -- Hide the tracker frame
+        elseif GetTime() - startTime >= timeout then
+            -- Timeout reached, call the callback with false
+            callback(false)
+            self:SetScript("OnUpdate", nil) -- Stop the OnUpdate script
+            self:Hide()                     -- Hide the tracker frame
+        end
+    end)
+
+    checkerFrame:Show() -- Activate the frame to start OnUpdate tracking
+end
+
 local function PrepareEquipmentTable()
     if not equipmentLoaded then
         for slotID = 1, 18 do
@@ -93,7 +117,6 @@ local function PrepareEquipmentTable()
     return equipmentTable
 end
 
---Refresh main frame content (left char side)
 local function RefreshMainFrameContent()
     -- Prepare equipment data
     equipmentData = PrepareEquipmentTable()
@@ -101,7 +124,7 @@ local function RefreshMainFrameContent()
     -- Populate equipment slots dynamically
     for slotID, slotData in pairs(equipmentData) do
         -- Retrieve the pre-created slot
-        local slot = content.slots[slotID]
+        local slot = botEquipmentFrame.slots[slotID]
 
         if slot then
             -- Update the slot's icon
@@ -126,7 +149,7 @@ local function RefreshMainFrameContent()
 
             -- Update right-click unequip action
             slot.itemText:SetScript("OnClick", function(self, button)
-                if UnBotTargetInspectFrame and UnBotTargetInspectFrame:IsShown() then
+                if botMainInspectFrame and botMainInspectFrame:IsShown() then
                     if button == "LeftButton" and slot.itemLink then
                         local itemID = slot.itemID
                         tempSlots[slotID] = {
@@ -153,36 +176,40 @@ local function RefreshMainFrameContent()
     end
 
     -- Reset unused slots (if not in equipmentData)
-    for slotID, slot in pairs(content.slots) do
+    for slotID, slot in pairs(botEquipmentFrame.slots) do
         if not equipmentData[slotID] then
             -- Reset icon to default texture
             slot.icon:SetTexture("Interface/Icons/INV_Misc_QuestionMark")
+
+            -- Reset item text to "Empty"
             slot.itemText:GetFontString():SetText("Empty")
+
+            -- Clear slot-specific data
             slot.itemLink = nil
             slot.itemID = nil
         end
     end
 end
 
---Refresh Bag frame with new content
 local function UpdateBagFrame(message, bagFrame)
     -- Validate the input message
     if not message or message == "" then
         print("Error: Message is nil or empty")
         return
     end
-
+    --print("Received message: ", message)
     -- Parse the incoming message and populate wearableItems
     for i = 1, 17 do
         wearableItems[i] = {} -- Each row has up to 5 slots
     end
 
-    -- Extract item IDs from the message
     for itemID in string.gmatch(message, "|Hitem:(%d+):") do
         local numericItemID = tonumber(itemID)
 
         -- Fetch item data
-        local itemName, itemLink, _, _, _, _, _, _, itemEquipLoc = GetItemInfo(numericItemID)
+        local itemName, itemLink, _, itemLevel, _, _, _, _, itemEquipLoc = GetItemInfo(numericItemID)
+
+        --print(itemName, itemLink, itemEquipLoc, slotMap[itemEquipLoc], itemLevel) -- Debug output
 
         if itemLink and slotMap[itemEquipLoc] then
             local rowIndex = slotMap[itemEquipLoc]
@@ -193,23 +220,18 @@ local function UpdateBagFrame(message, bagFrame)
                 table.insert(row, {
                     itemLink = itemLink,
                     itemName = itemName,
-                    itemEquipLoc = itemEquipLoc
+                    itemEquipLoc = itemEquipLoc,
+                    itemLevel = itemLevel -- Include the item level for sorting
                 })
+
+                -- Sort the row by item level in descending order
+                table.sort(row, function(a, b)
+                    return (a.itemLevel or 0) > (b.itemLevel or 0) -- Handle cases where itemLevel might be nil
+                end)
             end
         else
             -- Attempt to cache uncached items (optional)
             GameTooltip:SetHyperlink("item:" .. numericItemID)
-        end
-    end
-
-    for rowIndex, row in ipairs(wearableItems) do
-        local rowText = "Row " .. rowIndex .. ": "
-        for colIndex, itemData in ipairs(row) do
-            if itemData.itemLink then
-                rowText = rowText .. "[" .. itemData.itemLink .. "] "
-            else
-                rowText = rowText .. "[Empty] "
-            end
         end
     end
 
@@ -270,9 +292,6 @@ local function UpdateBagFrame(message, bagFrame)
                             if capturedItemLink then
                                 local itemID = string.match(capturedItemLink, "Hitem:(%d+):")
                                 if itemID then
-                                    -- Send equip command to playerbot
-                                    SendChatMessage("e " .. capturedItemLink, "WHISPER", nil, UnitName(playerT))
-                                    updateFrame:Show()
                                     -- Push the updated slot data back into equipmentTable
                                     if tempSlots[slotID] then
                                         --PrintTableContents("Before Push Back - tempSlots[slotID]:", tempSlots[slotID])
@@ -285,17 +304,29 @@ local function UpdateBagFrame(message, bagFrame)
                                         --print("No data found in tempSlots for slotID:", slotID)
 
                                         -- Recreate the item using slot data as a fallback
-                                        --print("Slot Data for Recreation - itemID:", slot.itemID, "itemLink:", slot.itemLink)
+                                        --print("Slot Data for Recreation - itemID:", itemID)
                                         equipmentTable[slotID] = {
                                             itemID = tonumber(itemID),                 -- Use slot.itemID as fallback
                                             itemLink = select(2, GetItemInfo(itemID)), -- Dynamically fetch item link
                                             itemTexture = GetItemIcon(itemID),         -- Fetch item texture dynamically
                                         }
-
                                         -- Debug recreated item
                                         --PrintTableContents("Recreated item in equipmentTable[slotID]:", equipmentTable[slotID])
                                         --print("Item recreated successfully for slotID:", slotID)
                                     end
+
+                                    -- Send equip command to playerbot
+                                    SendChatMessage("e " .. capturedItemLink, "WHISPER", nil, UnitName(playerT))
+                                    updateFrame:Show()
+                                    --We will wait for 3sec for UNIT_INVENTORY_CHANGED event, if pass 3 sec -> equip failed
+                                    WaitAndCheckFrameHidden(updateFrame, 3, function(result)
+                                        if not result then
+                                            updateFrame:Hide()
+                                            print("Eqip failed!")
+                                            BotEquippmentManagerMainFrame()
+                                            return
+                                        end
+                                    end)
                                 else
                                     print("Error: Unable to parse itemID from itemLink.")
                                 end
@@ -333,34 +364,57 @@ local function UpdateBagFrame(message, bagFrame)
     updateFrame:Hide()
 end
 
---Main frame (Start)
-function ToggleCharacterFrame()
+function BotEquippmentManagerMainFrame()
     -- Check if the target is a player
     if not UnitIsPlayer("target") then
         print("The selected target is not a player!")
         return
     end
-    -- Can't target yoursself
+    -- Check if the target is yourself
     if UnitIsUnit("target", "player") then
         print("Can't target yourself!")
         return
     end
 
-    playerT = UnitName("target")
-    -- Forces data retrieval for the target
-    NotifyInspect(playerT)
+    -- Check if the target is alive
+    if UnitIsDead("target") then
+        print("The target is dead!")
+        return
+    end
 
-    -- Ensure frame exists on 1st run
-    if not UnBotTargetInspectFrame then
+    -- Check if the target is within inspect range (distance code 1)
+    if not CheckInteractDistance("target", 1) then
+        print("The target is out of inspect range!")
+        return
+    end
+
+    -- Check if the target is in combat
+    if UnitAffectingCombat("target") then
+        print("Target is in combat!")
+        return
+    end
+
+    if not UnitInParty("target") or not UnitInRaid("target") then
+        print("Target is not in your party/raid!")
+        return
+    end
+
+    SendChatMessage("nc -passive", "PARTY") --Ensure to bot reacts on inspection
+    playerT = UnitName("target")
+
+    NotifyInspect(playerT) -- Forces data retrieval for the target
+
+    -- Ensure frame exists
+    if not botMainInspectFrame then
         -- Create the main frame (only once)
-        UnBotTargetInspectFrame = CreateFrame("Frame", "UnBotTargetInspectFrame", UIParent)
-        UnBotTargetInspectFrame:RegisterEvent("UNIT_INVENTORY_CHANGED")
-        UnBotTargetInspectFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-        UnBotTargetInspectFrame:SetScript("OnEvent", function(self, event, unit)
+        botMainInspectFrame = CreateFrame("Frame", "UnBotTargetInspectFrame", UIParent)
+        botMainInspectFrame:RegisterEvent("UNIT_INVENTORY_CHANGED")
+        botMainInspectFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+        botMainInspectFrame:SetScript("OnEvent", function(self, event, unit)
             if event == "UNIT_INVENTORY_CHANGED" then
                 if unit == "target" then
                     --print("Inventory has changed for", playerT)
-                    ToggleCharacterFrame() -- Refresh the frame when inventory changes
+                    BotEquippmentManagerMainFrame() -- Refresh the frame when inventory changes
                 end
             elseif event == "PLAYER_TARGET_CHANGED" then
                 print("Target changed!")
@@ -371,23 +425,37 @@ function ToggleCharacterFrame()
                     equipmentLoaded = false
                     equipmentTable = {}
                     tempSlots = {}
-                    UnBotTargetInspectFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
-                    UnBotTargetInspectFrame:UnregisterEvent("UNIT_INVENTORY_CHANGED")
-                    UnBotTargetInspectFrame:Hide()
+                    botMainInspectFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
+                    botMainInspectFrame:UnregisterEvent("UNIT_INVENTORY_CHANGED")
+                    botMainInspectFrame:Hide()
                     return
                 end
+                botBagItemsFrame:Hide()
+                botBagItemsFrame = nil
                 equipmentLoaded = false
                 equipmentTable = {}
                 tempSlots = {}
                 -- Ensure we are listening for the new target's inventory changes
-                UnBotTargetInspectFrame:RegisterEvent("UNIT_INVENTORY_CHANGED")
-                ToggleCharacterFrame() -- Refresh UI as needed
+                botMainInspectFrame:RegisterEvent("UNIT_INVENTORY_CHANGED")
+                BotEquippmentManagerMainFrame() -- Refresh UI as needed
             end
         end)
+        -- Enable frame movement
+        botMainInspectFrame:EnableMouse(true) -- Allow mouse interaction
+        botMainInspectFrame:SetMovable(true)  -- Make it movable
 
-        UnBotTargetInspectFrame:SetSize(650, 785)
-        UnBotTargetInspectFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 100)
-        UnBotTargetInspectFrame:SetBackdrop({
+        -- Add drag functionality
+        botMainInspectFrame:RegisterForDrag("LeftButton") -- Drag with left mouse button
+        botMainInspectFrame:SetScript("OnDragStart", function(self)
+            self:StartMoving()                            -- Start moving the frame
+        end)
+        botMainInspectFrame:SetScript("OnDragStop", function(self)
+            self:StopMovingOrSizing() -- Stop moving the frame
+        end)
+
+        botMainInspectFrame:SetSize(650, 785)
+        botMainInspectFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 100)
+        botMainInspectFrame:SetBackdrop({
             bgFile = "Interface/Tooltips/UI-Tooltip-Background",
             edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
             tile = true,
@@ -395,47 +463,50 @@ function ToggleCharacterFrame()
             edgeSize = 16,
             insets = { left = 4, right = 4, top = 4, bottom = 4 }
         })
-        UnBotTargetInspectFrame:SetBackdropColor(0, 0, 0, 1)
+        botMainInspectFrame:SetBackdropColor(0, 0, 0, 1)
 
         -- Add close button
-        local closeButton = CreateFrame("Button", nil, UnBotTargetInspectFrame, "UIPanelCloseButton")
-        closeButton:SetPoint("TOPRIGHT", UnBotTargetInspectFrame, "TOPRIGHT")
+        local closeButton = CreateFrame("Button", nil, botMainInspectFrame, "UIPanelCloseButton")
+        closeButton:SetPoint("TOPRIGHT", botMainInspectFrame, "TOPRIGHT")
         closeButton:SetScript("OnClick", function()
-            equipmentLoaded = false -- Reset the equipmentLoaded flagg
+            equipmentLoaded = false -- Reload equipment data on next opening
             equipmentTable = {}
             tempSlots = {}
-            UnBotTargetInspectFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
-            UnBotTargetInspectFrame:UnregisterEvent("UNIT_INVENTORY_CHANGED")
-            UnBotTargetInspectFrame:Hide()
+            botMainInspectFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
+            botMainInspectFrame:UnregisterEvent("UNIT_INVENTORY_CHANGED")
+            botBagItemsFrame:Hide()
+            botBagItemsFrame = nil
+            botMainInspectFrame:Hide()
         end)
 
         -- Title and labels
-        local titleText = UnBotTargetInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        titleText:SetPoint("TOP", UnBotTargetInspectFrame, "TOP", 0, -10)
-        UnBotTargetInspectFrame.titleText = titleText
+        local titleText = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        titleText:SetPoint("TOP", botMainInspectFrame, "TOP", 0, -10)
+        botMainInspectFrame.titleText = titleText
 
-        local classText = UnBotTargetInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        local classText = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         classText:SetPoint("TOP", titleText, "BOTTOM", 0, -10)
-        UnBotTargetInspectFrame.classText = classText
+        botMainInspectFrame.classText = classText
 
-        local levelText = UnBotTargetInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        local levelText = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         levelText:SetPoint("TOP", classText, "BOTTOM", 0, -5)
-        UnBotTargetInspectFrame.levelText = levelText
+        botMainInspectFrame.levelText = levelText
 
-        local leftLabel = UnBotTargetInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        leftLabel:SetPoint("TOP", UnBotTargetInspectFrame, "TOP", -250, -50)
+        local leftLabel = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        leftLabel:SetPoint("TOP", botMainInspectFrame, "TOP", -250, -50)
         leftLabel:SetText("Player equipment")
 
-        local rightLabel = UnBotTargetInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        rightLabel:SetPoint("TOP", UnBotTargetInspectFrame, "TOP", 150, -50)
+        local rightLabel = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        rightLabel:SetPoint("TOP", botMainInspectFrame, "TOP", 150, -50)
         rightLabel:SetText("Items in bags")
 
         -- Create the "Updating..." frame
-        updateFrame = CreateFrame("Frame", "UpdateFrame", UnBotTargetInspectFrame)
+        updateFrame = CreateFrame("Frame", "UpdateFrame", botMainInspectFrame)
         updateFrame:SetSize(250, 150)
-        updateFrame:SetPoint("CENTER", UnBotTargetInspectFrame, "CENTER", 0, 0) -- Center it within the main frame
-        updateFrame:SetFrameStrata("HIGH")                                      -- Set the strata so it appears above other frames
-        updateFrame:SetFrameLevel(20)                                           -- Increase the frame level to ensure it overlays
+        updateFrame:SetPoint("CENTER", botMainInspectFrame, "CENTER", 0, 0) -- Center it within the main frame
+        updateFrame:SetFrameStrata("HIGH")                                  -- Set the strata so it appears above other frames
+        updateFrame:SetFrameLevel(20)                                       -- Increase the frame level to ensure it overlays
+        --updateFrame:Show()                                                      -- Initially hidden
         -- Add a background and border
         updateFrame:SetBackdrop({
             bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -445,50 +516,52 @@ function ToggleCharacterFrame()
             edgeSize = 16,
             insets = { left = 4, right = 4, top = 4, bottom = 4 }
         })
-        -- Add text to the Upd frame
+        -- Add text to the "Updating..." frame
         local updateText = updateFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge") -- Change to a larger font
         updateText:SetPoint("CENTER", updateFrame, "CENTER", 0, 0)
         updateText:SetText("Updating...")
     end
 
     --Re-register event if needed
-    if not UnBotTargetInspectFrame:IsEventRegistered("UNIT_INVENTORY_CHANGED") then
-        UnBotTargetInspectFrame:RegisterEvent("UNIT_INVENTORY_CHANGED")
+    if not botMainInspectFrame:IsEventRegistered("UNIT_INVENTORY_CHANGED") then
+        print("Re-registering UNIT_INVENTORY_CHANGED event")
+        botMainInspectFrame:RegisterEvent("UNIT_INVENTORY_CHANGED") -- Register the event
     end
-    if not UnBotTargetInspectFrame:IsEventRegistered("PLAYER_TARGET_CHANGED") then
-        UnBotTargetInspectFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+    if not botMainInspectFrame:IsEventRegistered("PLAYER_TARGET_CHANGED") then
+        print("Re-registering PLAYER_TARGET_CHANGED event")
+        botMainInspectFrame:RegisterEvent("PLAYER_TARGET_CHANGED") -- Register the event
     end
 
     --Show main frame
-    UnBotTargetInspectFrame:Show()
-    -- Show the update frame (loading of items is in progress)
+    botMainInspectFrame:Show()
     updateFrame:Show()
 
     -- Update title and target details
-    UnBotTargetInspectFrame.titleText:SetText("Inspecting: " .. UnitName(playerT))
+    botMainInspectFrame.titleText:SetText("Inspecting: " .. UnitName(playerT))
     local targetClass, _ = UnitClass(playerT)
-    UnBotTargetInspectFrame.classText:SetText("Class: " .. targetClass)
-    UnBotTargetInspectFrame.levelText:SetText("Level: " .. UnitLevel(playerT))
+    botMainInspectFrame.classText:SetText("Class: " .. targetClass)
+    botMainInspectFrame.levelText:SetText("Level: " .. UnitLevel(playerT))
 
     -- Create content area for player equipment
-    if not content then
-        content = CreateFrame("Frame", nil, UnBotTargetInspectFrame)
-        content:SetSize(460, 700)
-        content:SetPoint("TOPLEFT", UnBotTargetInspectFrame, "TOPLEFT", 10, -80)
+    if not botEquipmentFrame then
+        --print("Creating new content area")
+        botEquipmentFrame = CreateFrame("Frame", nil, botMainInspectFrame)
+        botEquipmentFrame:SetSize(460, 700)
+        botEquipmentFrame:SetPoint("TOPLEFT", botMainInspectFrame, "TOPLEFT", 10, -80)
 
         -- Ensure full opacity for the content frame
-        content:SetAlpha(1)                          -- Fully opaque
-        content:SetBackdrop({
+        botEquipmentFrame:SetAlpha(1)                -- Fully opaque
+        botEquipmentFrame:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8X8", -- Solid background
             edgeFile = nil,                          -- No border unless required
             tile = false,
             edgeSize = 0,                            -- No edges
             insets = { left = 0, right = 0, top = 0, bottom = 0 }
         })
-        content:SetBackdropColor(0, 0, 0, 1) -- Solid black background
+        botEquipmentFrame:SetBackdropColor(0, 0, 0, 1) -- Solid black background
 
         -- Initialize slots table to store pre-created slots
-        content.slots = {}
+        botEquipmentFrame.slots = {}
 
         local validSlotIndex = 0 -- Tracks the visual index of valid slots (excluding skipped ones)
         for slotID = 1, 18 do
@@ -497,24 +570,27 @@ function ToggleCharacterFrame()
             -- Skip specific slots (e.g., "Shirt" at slotID = 4)
             if slotID ~= 4 and slotName then
                 validSlotIndex = validSlotIndex + 1 -- Increment for valid slots only
+
                 local slot = {}
+
                 -- Slot name
-                slot.slotNameText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-                slot.slotNameText:SetPoint("TOPLEFT", content, "TOPLEFT", 5, -85 - (validSlotIndex * 40) + 90 + 15)
+                slot.slotNameText = botEquipmentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+                slot.slotNameText:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 5,
+                    -85 - (validSlotIndex * 40) + 90 + 15)
                 slot.slotNameText:SetText(slotName)
                 slot.slotNameText:SetAlpha(1) -- Ensure text is fully opaque
 
                 -- Slot icon
-                slot.icon = content:CreateTexture(nil, "ARTWORK")
+                slot.icon = botEquipmentFrame:CreateTexture(nil, "ARTWORK")
                 slot.icon:SetSize(30, 30)
-                slot.icon:SetPoint("TOPLEFT", content, "TOPLEFT", 75, -55 - (validSlotIndex * 40) + 90)
+                slot.icon:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 75, -55 - (validSlotIndex * 40) + 90)
                 slot.icon:SetTexture("Interface/Icons/INV_Misc_QuestionMark")
                 slot.icon:SetAlpha(1) -- Ensure icon is fully opaque
 
                 -- Item text button
-                slot.itemText = CreateFrame("Button", nil, content)
+                slot.itemText = CreateFrame("Button", nil, botEquipmentFrame)
                 slot.itemText:SetSize(250, 40)
-                slot.itemText:SetPoint("TOPLEFT", content, "TOPLEFT", 115, -55 - (validSlotIndex * 40) + 90)
+                slot.itemText:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 115, -55 - (validSlotIndex * 40) + 90)
                 slot.itemText:SetText("Empty")
                 slot.itemText:SetNormalFontObject(GameFontHighlight)
                 slot.itemText:SetHighlightFontObject(GameFontNormal)
@@ -531,7 +607,7 @@ function ToggleCharacterFrame()
                 end)
                 slot.itemText:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-                -- Left-click unequip action
+                -- Right-click unequip action
                 slot.itemText:RegisterForClicks("LeftButtonUp")
                 slot.itemText:SetScript("OnClick", function(self, button)
                     if button == "LeftButton" and slot.itemLink then
@@ -543,50 +619,52 @@ function ToggleCharacterFrame()
                 end)
 
                 -- Store the slot in the slots table
-                content.slots[slotID] = slot
+                botEquipmentFrame.slots[slotID] = slot
             else
                 print("Skipping slotID:", slotID, "due to exclusion.")
             end
         end
     end
 
-    -- Refresh content (left char side)
+    -- Refresh content dynamically
     RefreshMainFrameContent()
 
-    -- Create the BagFrame (right side)
-    if not bagFrame then
+    -- Create the BagFrame
+    if not botBagItemsFrame then
         -- Create the frame
-        bagFrame = CreateFrame("Frame", "BagFrame", UnBotTargetInspectFrame)
-        bagFrame:SetSize(390, 700)                                                   -- Set dimensions of the subframe
-        bagFrame:SetPoint("TOPLEFT", UnBotTargetInspectFrame, "TOPRIGHT", -400, -80) -- Position relative to the main frame
+        botBagItemsFrame = CreateFrame("Frame", "BagFrame", botMainInspectFrame)
+        botBagItemsFrame:SetSize(390, 700)                                               -- Set dimensions of the subframe
+        botBagItemsFrame:SetPoint("TOPLEFT", botMainInspectFrame, "TOPRIGHT", -400, -80) -- Position relative to the main frame
 
         -- Ensure the frame is fully opaque
-        bagFrame:SetAlpha(1)                         -- Fully opaque
-        bagFrame:SetBackdrop({
+        botBagItemsFrame:SetAlpha(1)                 -- Fully opaque
+        botBagItemsFrame:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8X8", -- Solid background texture
             edgeFile = nil,                          -- No border unless required
             tile = false,
             edgeSize = 0,                            -- No edges
             insets = { left = 0, right = 0, top = 0, bottom = 0 }
         })
-        bagFrame:SetBackdropColor(0, 0, 0, 1) -- Solid black background
+        botBagItemsFrame:SetBackdropColor(0, 0, 0, 1) -- Solid black background
     end
-    bagFrame:Show()
+
+    botBagItemsFrame:Show()
 
     -- Initialize the slots table if it doesn't exist
-    if not bagFrame.slots then
-        bagFrame.slots = {}
+    if not botBagItemsFrame.slots then
+        botBagItemsFrame.slots = {}
     end
 
     -- Loop through rows and columns to create the 17 x 5 grid
     for rowIndex = 1, 17 do
         for colIndex = 1, 5 do
             local slotIndex = (rowIndex - 1) * 5 + colIndex -- Unique index for each slot
-            if not bagFrame.slots[slotIndex] then
+            if not botBagItemsFrame.slots[slotIndex] then
                 -- Create a slot in the BagFrame
-                local slot = CreateFrame("Button", nil, bagFrame)
+                local slot = CreateFrame("Button", nil, botBagItemsFrame)
                 slot:SetSize(30, 30) -- Adjust size of each slot
-                slot:SetPoint("TOPLEFT", bagFrame, "TOPLEFT", 150 + (colIndex - 1) * 45, -10 - (rowIndex - 1) * 40)
+                slot:SetPoint("TOPLEFT", botBagItemsFrame, "TOPLEFT", 150 + (colIndex - 1) * 45,
+                    -10 - (rowIndex - 1) * 40)
                 slot:EnableMouse(true)
 
                 -- Add a default texture to the slot
@@ -604,10 +682,10 @@ function ToggleCharacterFrame()
                     GameTooltip:Hide()
                 end)
 
-                -- Add left-click functionality
+                -- Add right-click functionality
                 slot:SetScript("OnMouseDown", function(self, button)
                     if button == "LeftButton" then
-                        -- Highlight effect for left-click
+                        -- Highlight effect for right-click
                         slotTexture:SetPoint("TOPLEFT", self, "TOPLEFT", 2, -2)
                         slotTexture:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -2, 2)
                     end
@@ -625,7 +703,7 @@ function ToggleCharacterFrame()
                 slot.slotID = (rowIndex >= 4) and (rowIndex + 1) or rowIndex -- Map rowIndex to slotID
 
                 -- Store the slot for future reuse
-                bagFrame.slots[slotIndex] = slot
+                botBagItemsFrame.slots[slotIndex] = slot
             end
         end
     end
@@ -637,37 +715,35 @@ function ToggleCharacterFrame()
         whisperDelayFrame:SetScript("OnUpdate", nil) -- Initially disabled
     end
 
-    -- Accumulate playerbot inventory whispers in a table
-    accumulatedMessages = accumulatedMessages or {}
+    -- Accumulate whispers in a table
+    botInventoryMessages = botInventoryMessages or {}
 
     -- Create or manage the chat listener for BagFrame
-    if not chatListenerMainBag then
-        chatListenerMainBag = CreateFrame("Frame", nil, UnBotTargetInspectFrame)
+    if not chatBotInventoryListener then
+        chatBotInventoryListener = CreateFrame("Frame", nil, botMainInspectFrame)
     end
-    if chatListenerMainBag:IsEventRegistered("CHAT_MSG_WHISPER") then
-        chatListenerMainBag:UnregisterEvent("CHAT_MSG_WHISPER")
+    if not chatBotInventoryListener:IsEventRegistered("CHAT_MSG_WHISPER") then
+        chatBotInventoryListener:RegisterEvent("CHAT_MSG_WHISPER")
     end
-    chatListenerMainBag:RegisterEvent("CHAT_MSG_WHISPER")
 
-    chatListenerMainBag:SetScript("OnEvent", function(_, _, message, sender)
+    chatBotInventoryListener:SetScript("OnEvent", function(_, _, message, sender)
         -- Ensure the main frame is visible before handling messages
-        if UnBotTargetInspectFrame and UnBotTargetInspectFrame:IsShown() then
-            -- Whisper filtering (maybe there will be more  than 3)
+        if botMainInspectFrame and botMainInspectFrame:IsShown() then
             if sender == UnitName(playerT) and string.match(message, "%[.+%]") and not string.find(message, "Equipping") and not string.find(message, "unequipped") then
                 -- Accumulate each whisper message
-                table.insert(accumulatedMessages, message)
+                table.insert(botInventoryMessages, message)
                 -- Start or restart the whisper delay timer
                 if whisperDelayFrame:GetScript("OnUpdate") == nil then
                     whisperDelayFrame.timeElapsed = 0 -- Reset timer
                     whisperDelayFrame:SetScript("OnUpdate", function(self, elapsed)
                         self.timeElapsed = self.timeElapsed + elapsed
-                        if self.timeElapsed >= 1 then -- 1-second timeout
+                        if self.timeElapsed >= 0.1 then -- 1-second timeout
                             -- Combine accumulated messages into a single string
-                            local combinedMessage = table.concat(accumulatedMessages, " ")
+                            local combinedMessage = table.concat(botInventoryMessages, " ")
                             -- UpdateBagFrame function placeholder
-                            UpdateBagFrame(combinedMessage, bagFrame)
+                            UpdateBagFrame(combinedMessage, botBagItemsFrame)
                             -- Clear accumulated messages
-                            accumulatedMessages = {}
+                            botInventoryMessages = {}
                             -- Stop the timer
                             self.timeElapsed = 0
                             self:SetScript("OnUpdate", nil)
@@ -678,6 +754,6 @@ function ToggleCharacterFrame()
         end
     end)
 
-    -- Trigger bot command to fetch bag items from whisper reply
+    -- Trigger bot command to fetch bag items
     SendChatMessage("c", "WHISPER", nil, UnitName(playerT))
 end

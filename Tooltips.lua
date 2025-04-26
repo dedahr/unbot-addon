@@ -18,7 +18,7 @@
 	[79] = CommandFriendsInvite,
 	[80] = CommandReadyCheck,
 	[88] = CommandAddFriends,
-	[91] = CommandUnBotCharFrame,
+	[91] = CommandBotCharEquipmentManagerFrame,
 };
 
 UnBotCommandToGroups = {
@@ -208,7 +208,7 @@ UnBotIconFiles = {
 	[88] = 174,
 	[89] = 103,
 	[90] = 3616,
-	[91] = 5373,
+	[91] = 532,
 };
 
 UnBotTooltipTitle = {
@@ -261,11 +261,11 @@ UnBotTooltipTitle = {
 	[46] = "Check the formation of all bots",
 	[47] = "Make all bots stand still",
 	[48] = "Select bot to automatically select target", -- Needs correction
-	[49] = "Select bot to select target manually",  -- Needs correction
-	[50] = "Druid Spell DPS",                       -- Needs correction
-	[51] = "Druid Bear Form",                       -- Needs correction
-	[52] = "Druid Cat Form",                        -- Needs correction
-	[53] = "Druid Healing Mode",                    -- Needs correction
+	[49] = "Select bot to select target manually",   -- Needs correction
+	[50] = "Druid Spell DPS",                        -- Needs correction
+	[51] = "Druid Bear Form",                        -- Needs correction
+	[52] = "Druid Cat Form",                         -- Needs correction
+	[53] = "Druid Healing Mode",                     -- Needs correction
 	[54] = "Open the strategy editor",
 	[55] = "Make a Paladin bot use Frost Resistance Aura",
 	[56] = "Make a Paladin bot use Fire Resistance Aura",
@@ -301,7 +301,7 @@ UnBotTooltipTitle = {
 	[86] = "Make a bot go offline",
 	[87] = "Make a bot go online",
 	[88] = "Add all bots to your friends list",
-	[89] = "Grind",          -- Needs correction
+	[89] = "Grind",           -- Needs correction
 	[90] = "Unlock traded item", -- Needs correction
 	[91] = "Bot equipment change",
 };
@@ -310,7 +310,7 @@ UnBotTooltipHelp = {
 	[0] =
 	"Closes open windows and expanded button groups. Use right mouse button to hide the bar. You can use /unbot to toggle the bar.",
 	[1] =
-	"Reinitialize all online bots, including their levels (random among the level ranges set), equipment, and skills. After execution, the server will be stuck and you need to wait. It cannot be executed frequently.",   -- Needs correction
+	"Reinitialize all online bots, including their levels (random among the level ranges set), equipment, and skills. After execution, the server will be stuck and you need to wait. It cannot be executed frequently.", -- Needs correction
 	[2] = "Initializes the targeted bot. It will set their level, equipment, and skills.",
 	[3] = "Initializes all bots in your group. It will set their level, equipment, and skills.",
 	[4] =
@@ -347,24 +347,24 @@ UnBotTooltipHelp = {
 	[21] =
 	"Checks the quest status of the targeted bot. It will tell you how many quests are completed and how many are in progress.",
 	[22] =
-	"View the current status of all bots in the team, including: what percentage of experience the current level has, the number of remaining backpack slots, and the amount of remaining money.",    -- Needs correction
+	"View the current status of all bots in the team, including: what percentage of experience the current level has, the number of remaining backpack slots, and the amount of remaining money.", -- Needs correction
 	[23] =
-	"View the current status of the selected bot, including: what percentage of experience the current level has, the number of remaining backpack grids, and the amount of remaining money.",        -- Needs correction
+	"View the current status of the selected bot, including: what percentage of experience the current level has, the number of remaining backpack grids, and the amount of remaining money.",  -- Needs correction
 	[24] = "Makes all bots in your group collect loot from nearby dead enemies.",
 	[25] =
-	"Makes all bots in the team run away, abandon the fight, and run to your own location to follow you. (You can use the follow command to cancel this effect, command 15 or 16 follow)",            -- Needs correction
+	"Makes all bots in the team run away, abandon the fight, and run to your own location to follow you. (You can use the follow command to cancel this effect, command 15 or 16 follow)",    -- Needs correction
 	[26] =
-	"Let the tank robot in the team run away, give up the fight, and run to your own position to follow you. (You can use the follow command to cancel this effect, command 15 or 16 follow)",        -- Needs correction
+	"Let the tank robot in the team run away, give up the fight, and run to your own position to follow you. (You can use the follow command to cancel this effect, command 15 or 16 follow)", -- Needs correction
 	[27] =
-	"Let the dps robot in the team run away, give up the fight, and run to your own position to follow you. (You can use the follow command to cancel this effect, command 15 or 16 follow)",         -- Needs correction
+	"Let the dps robot in the team run away, give up the fight, and run to your own position to follow you. (You can use the follow command to cancel this effect, command 15 or 16 follow)", -- Needs correction
 	[28] =
-	"Have the healer bots in the team run away, give up the fight, and run to your own location to follow you. (You can use the follow command to cancel this effect, command 15 or 16 follow)",      -- Needs correction
+	"Have the healer bots in the team run away, give up the fight, and run to your own location to follow you. (You can use the follow command to cancel this effect, command 15 or 16 follow)", -- Needs correction
 	[29] =
-	"Let the melee bots in the team run away, give up the fight, and run to your own position to follow you. (You can use the follow command to cancel this effect, command 15 or 16 follow)",        -- Needs correction
+	"Let the melee bots in the team run away, give up the fight, and run to your own position to follow you. (You can use the follow command to cancel this effect, command 15 or 16 follow)", -- Needs correction
 	[30] =
-	"Let the ranged bots in the team run away, give up the fight, and run to your own location to follow you. (You can use the follow command to cancel this effect, command 15 or 16 follow)",       -- Needs correction
+	"Let the ranged bots in the team run away, give up the fight, and run to your own location to follow you. (You can use the follow command to cancel this effect, command 15 or 16 follow)", -- Needs correction
 	[31] =
-	"Makes the chosen bot escape, give up the fight, and run to your own location to follow you. (You can use the follow command to cancel this effect, command 15 or 16 follow)",                    -- Needs correction
+	"Makes the chosen bot escape, give up the fight, and run to your own location to follow you. (You can use the follow command to cancel this effect, command 15 or 16 follow)",            -- Needs correction
 	[32] = "Makes all bots in your group attack the targeted enemy.",
 	[33] = "Makes tank bots in your group attack the targeted enemy.",
 	[34] = "Makes dps bots in your group attack the targeted enemy.",
@@ -377,23 +377,23 @@ UnBotTooltipHelp = {
 	[39] = "Let all the bots in the team spread out and follow you one by one.",
 	[40] = "Makes all bots in your group position themselves in a dense formation.",
 	[41] = "Let all bots in the team position themselves according to the melee mode.", -- Needs correction
-	[42] = "Let all the bots in the team stand in a horizontal line formation.",    -- Needs correction
+	[42] = "Let all the bots in the team stand in a horizontal line formation.",     -- Needs correction
 	[43] =
 	"Let all the bots in the team stand in a circular shape, with tanks and melee in the middle, and ranged and healers standing in a large circle on the outside.",
-	[44] = "Let all the bots in the team follow you in random order.",              -- Needs correction
+	[44] = "Let all the bots in the team follow you in random order.",            -- Needs correction
 	[45] = "Let all the bots in the team spread out in defensive shield formation.", -- Needs correction
 	--
 	[46] = "Checks the current formation of all bots in your group.",
 	[47] =
 	"Makes all bots in your group stand still. They can still continue their normal routine while in combat but will return to standing still after leaving combat.",
 	[48] =
-	"Select the bot to automatically select the target. Once entering the battle, the bot will automatically select the attack target. The attack command is invalid for the bot.",                                                                                                                                             -- Needs correction
+	"Select the bot to automatically select the target. Once entering the battle, the bot will automatically select the attack target. The attack command is invalid for the bot.",                                                                                                                                       -- Needs correction
 	[49] =
-	"Select the bot to manually select the target. After entering the battle, the bot will be manually selected by the player to attack the designated target. It will not switch automatically. In other words, the DPS and TANK strategies are invalid in this combat mode, and the attack command is valid for the bot.",    -- Needs correction
-	[50] = "The selected druid bot uses spell dps in combat, and uses it if it has a moonkin form.",                                                                                                                                                                                                                            -- Needs correction
-	[51] = "The selected druid bot uses bear or giant bear form to pull monsters during battle.",                                                                                                                                                                                                                               -- Needs correction
-	[52] = "Use cat form dps in selected druid bot battles.",                                                                                                                                                                                                                                                                   -- Needs correction
-	[53] = "The selected druid bot is in healing mode during combat.",                                                                                                                                                                                                                                                          -- Needs correction
+	"Select the bot to manually select the target. After entering the battle, the bot will be manually selected by the player to attack the designated target. It will not switch automatically. In other words, the DPS and TANK strategies are invalid in this combat mode, and the attack command is valid for the bot.", -- Needs correction
+	[50] = "The selected druid bot uses spell dps in combat, and uses it if it has a moonkin form.",                                                                                                                                                                                                                      -- Needs correction
+	[51] = "The selected druid bot uses bear or giant bear form to pull monsters during battle.",                                                                                                                                                                                                                         -- Needs correction
+	[52] = "Use cat form dps in selected druid bot battles.",                                                                                                                                                                                                                                                             -- Needs correction
+	[53] = "The selected druid bot is in healing mode during combat.",                                                                                                                                                                                                                                                    -- Needs correction
 	[54] =
 	"Opens the strategy editor for the targeted bot. The editor allows you to define how the bot behaves both in and out of combat.",
 	[55] = "Makes the targeted Paladin bot use Frost Resistance Aura.",
@@ -414,7 +414,7 @@ UnBotTooltipHelp = {
 	[69] = "Checks the spells the targeted bot has.",
 	[70] = "Makes everyone in you group, including yourself, leave combat. (GM only)",
 	[71] =
-	"Let all players in the team leave the team, and the bots can leave the team one by one to avoid being unable to form these bots after you leave the team.",    -- Needs correction
+	"Let all players in the team leave the team, and the bots can leave the team one by one to avoid being unable to form these bots after you leave the team.", -- Needs correction
 	[72] = "Opens a window that lists all icons available in World of Warcraft.",
 	[73] = "Teleports you to the targeted player. (GM only)",
 	[74] =
@@ -427,7 +427,7 @@ UnBotTooltipHelp = {
 	[79] =
 	"Invites everyone on your friends list to your group. If the group is full while invites are still happening the process will be aborted.",
 	[80] =
-	"Execute a team's position confirmation and let the bot automatically replenish food, drink, ammunition and arrows according to the situation.",    -- Needs correction
+	"Execute a team's position confirmation and let the bot automatically replenish food, drink, ammunition and arrows according to the situation.", -- Needs correction
 	[81] = "Makes all bots in your group drink water to restore mana.",
 	[82] = "Makes all bots in your group go offline.",
 	[83] = "Makes all bots in your group go online.",
@@ -452,33 +452,33 @@ UnBotExecuteCommand = {
 	-- [6] = ".playerbot bot talent=1",
 	-- [7] = ".playerbot bot talent=2",
 	-- [8] = ".playerbot bot talent=3",
-	[9] = "reset botAI",   --/p
-	[10] = "reset botAI",  --/w %s
-	[11] = "inspect",      --/w %s
+	[9] = "reset botAI",    --/p
+	[10] = "reset botAI",   --/w %s
+	[11] = "inspect",       --/w %s
 	-- [12] = ".playerbot bot initforlevel ",
-	[13] = "summon",       --/p
-	[14] = "summon",       --/w %s
-	[15] = "follow",       --/p
-	[16] = "follow",       --/w %s
+	[13] = "summon",        --/p
+	[14] = "summon",        --/w %s
+	[15] = "follow",        --/p
+	[16] = "follow",        --/w %s
 	[17] = "trainer learn", --/p
-	[18] = "release",      --/p
-	[19] = "release",      --/w %s
-	[20] = "quests",       --/p
-	[21] = "quests",       --/w %s
-	[22] = "stats",        --/p
-	[23] = "stats",        --/w %s
-	[24] = "add all loot", --/p
-	[25] = "flee",         --/p
-	[26] = "@tank flee",   --/p
-	[27] = "@dps flee",    --/p
-	[28] = "@heal flee",   --/p
-	[29] = "@melee flee",  --/p
-	[30] = "@ranged flee", --/p
-	[31] = "flee",         --/w %s
-	[32] = "attack",       --/p
-	[33] = "@tank attack", --/p
-	[34] = "@dps attack",  --/p
-	[35] = "@heal attack", --/p
+	[18] = "release",       --/p
+	[19] = "release",       --/w %s
+	[20] = "quests",        --/p
+	[21] = "quests",        --/w %s
+	[22] = "stats",         --/p
+	[23] = "stats",         --/w %s
+	[24] = "add all loot",  --/p
+	[25] = "flee",          --/p
+	[26] = "@tank flee",    --/p
+	[27] = "@dps flee",     --/p
+	[28] = "@heal flee",    --/p
+	[29] = "@melee flee",   --/p
+	[30] = "@ranged flee",  --/p
+	[31] = "flee",          --/w %s
+	[32] = "attack",        --/p
+	[33] = "@tank attack",  --/p
+	[34] = "@dps attack",   --/p
+	[35] = "@heal attack",  --/p
 	[36] = "@melee attack", --/p
 	[37] = "@ranged attack", --/p
 	[38] = "formation arrow", --/p
@@ -490,7 +490,7 @@ UnBotExecuteCommand = {
 	[44] = "formation chaos", --/p
 	[45] = "formation shield", --/p
 	--[46] = "formation",--/p
-	[47] = "stay",         --/p
+	[47] = "stay",          --/p
 	--[48] = "",--/w %s
 	--[49] = "",--/w %s
 	--[50] = "",--/w %s
@@ -507,18 +507,18 @@ UnBotExecuteCommand = {
 	--[61] = "",--/w %s
 	--[62] = "",--/p
 	--[63] = "",--/w %s
-	[64] = "c",         --/w %s
-	[65] = "destroy ",  --/w %s
-	[66] = "e ",        --/w %s
-	[67] = "s ",        --/w %s
-	[68] = "u ",        --/w %s
-	[69] = "cast ",     --/w %s
+	[64] = "c",          --/w %s
+	[65] = "destroy ",   --/w %s
+	[66] = "e ",         --/w %s
+	[67] = "s ",         --/w %s
+	[68] = "u ",         --/w %s
+	[69] = "cast ",      --/w %s
 	-- [70] = ".combatstop ",--/p
 	[71] = "UninviteUnit ", --/p
 	[72] = "ICONS",
 	[73] = ".appear",
 	[74] = "online",
-	[75] = "", --/w %s
+	[75] = "",  --/w %s
 	[76] = "stay", --/w %s
 	[77] = ".playerbot bot addclass",
 	[78] = "friends online",
@@ -534,7 +534,7 @@ UnBotExecuteCommand = {
 	-- [88] = "add friends"
 	[89] = "grind",
 	[90] = "unlock traded item", --/w %s
-	[91] = "charequip",      --/w %s
+	[91] = "charequip",       --/w %s
 };
 
 --1 = No target selection required

@@ -17,5 +17,6 @@ Add a bot of a specific profession:
 * Some bugs fixed
 * Obosolete bot commands fixed to follow current PB state
 * Some personal flavoring added to Inventory and Icons forms
+* Added quick bot equipment manager (no more juggling around), still in progress, old inventory manager still works
 * and whtever I forgot to remember....
 * en-US or en-GB version only

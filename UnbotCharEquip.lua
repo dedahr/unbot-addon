@@ -117,7 +117,7 @@ local function PrepareEquipmentTable()
     return equipmentTable
 end
 
-local function RefreshMainFrameContent()
+local function UpdateBotEquipmentFrame()
     -- Prepare equipment data
     equipmentData = PrepareEquipmentTable()
 
@@ -158,6 +158,7 @@ local function RefreshMainFrameContent()
                             itemTexture = GetItemIcon(itemID),
                         }
                         -- Send unequip command to playerbot
+                        NotifyInspect(playerT) -- Forces data retrieval for the target
                         SendChatMessage("ue " .. slot.itemLink, "WHISPER", nil, UnitName(playerT))
                         updateFrame:Show()
                         -- Reset the slot dynamically when unequipped
@@ -274,55 +275,38 @@ local function UpdateBagFrame(message, bagFrame)
                         GameTooltip:Hide()
                     end)
 
-                    -- Add left-click functionality
                     slot:SetScript("OnMouseUp", function(self, button)
                         if button == "LeftButton" then
-                            -- Reset highlight effect
+                            -- Existing left-click functionality (unchanged)
                             slotTexture:SetPoint("TOPLEFT", self, "TOPLEFT", 0, 0)
                             slotTexture:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 0, 0)
 
-                            -- Retrieve slotID from the slot object
                             local slotID = self.slotID
                             if not slotID then
                                 print("Error: slotID is not defined for this slot.")
                                 return
                             end
 
-                            -- Handle item slot
                             if capturedItemLink then
                                 local itemID = string.match(capturedItemLink, "Hitem:(%d+):")
+                                NotifyInspect(playerT) -- Forces data retrieval for the target
                                 if itemID then
-                                    -- Push the updated slot data back into equipmentTable
                                     if tempSlots[slotID] then
-                                        --PrintTableContents("Before Push Back - tempSlots[slotID]:", tempSlots[slotID])
-                                        equipmentTable[slotID] = tempSlots[slotID] -- Push back the data
-                                        tempSlots[slotID] = nil                    -- Remove from temporary storage
-                                        --PrintTableContents("After Push Back - equipmentTable[slotID]:", equipmentTable[slotID])
-                                        --print("Successfully equipped item in slotID:", slotID)
+                                        equipmentTable[slotID] = tempSlots[slotID]
+                                        tempSlots[slotID] = nil
                                     else
-                                        -- Debug for missing tempSlots data
-                                        --print("No data found in tempSlots for slotID:", slotID)
-
-                                        -- Recreate the item using slot data as a fallback
-                                        --print("Slot Data for Recreation - itemID:", itemID)
                                         equipmentTable[slotID] = {
-                                            itemID = tonumber(itemID),                 -- Use slot.itemID as fallback
-                                            itemLink = select(2, GetItemInfo(itemID)), -- Dynamically fetch item link
-                                            itemTexture = GetItemIcon(itemID),         -- Fetch item texture dynamically
+                                            itemID = tonumber(itemID),
+                                            itemLink = select(2, GetItemInfo(itemID)),
+                                            itemTexture = GetItemIcon(itemID),
                                         }
-                                        -- Debug recreated item
-                                        --PrintTableContents("Recreated item in equipmentTable[slotID]:", equipmentTable[slotID])
-                                        --print("Item recreated successfully for slotID:", slotID)
                                     end
-
-                                    -- Send equip command to playerbot
                                     SendChatMessage("e " .. capturedItemLink, "WHISPER", nil, UnitName(playerT))
                                     updateFrame:Show()
-                                    --We will wait for 3sec for UNIT_INVENTORY_CHANGED event, if pass 3 sec -> equip failed
-                                    WaitAndCheckFrameHidden(updateFrame, 3, function(result)
+                                    WaitAndCheckFrameHidden(updateFrame, 5, function(result)
                                         if not result then
                                             updateFrame:Hide()
-                                            print("Eqip failed!")
+                                            print("Equip failed!")
                                             BotEquippmentManagerMainFrame()
                                             return
                                         end
@@ -331,7 +315,50 @@ local function UpdateBagFrame(message, bagFrame)
                                     print("Error: Unable to parse itemID from itemLink.")
                                 end
                             else
-                                -- Handle empty slot case
+                                print("No item data available for slotID:", slotID)
+                            end
+                            -- send to 2nd slot for rings trinkets and weapons (we can't do that yet as PB doesnt have that command and all is RND thing)
+                            -- workaround is to unequip both slots and equip with left click 1st slot and right click 2nd
+                        elseif button == "RightButton" and (rowIndex == 10 or rowIndex == 12 or rowIndex == 15) then
+                            slotTexture:SetPoint("TOPLEFT", self, "TOPLEFT", 2, -2)
+                            slotTexture:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -2, 2)
+
+                            local slotID = self.slotID
+                            if not slotID then
+                                print("Error: slotID is not defined for this slot.")
+                                return
+                            end
+
+                            if capturedItemLink then
+                                local itemID = string.match(capturedItemLink, "Hitem:(%d+):")
+                                NotifyInspect(playerT) -- Forces data retrieval for the target
+                                if itemID then
+                                    -- Use slotID + 1 for equipmentTable assignment
+                                    local newSlotID = slotID + 1
+                                    if tempSlots[slotID] then
+                                        equipmentTable[newSlotID] = tempSlots[slotID]
+                                        tempSlots[slotID] = nil
+                                    else
+                                        equipmentTable[newSlotID] = {
+                                            itemID = tonumber(itemID),
+                                            itemLink = select(2, GetItemInfo(itemID)),
+                                            itemTexture = GetItemIcon(itemID),
+                                        }
+                                    end
+                                    SendChatMessage("e " .. capturedItemLink, "WHISPER", nil, UnitName(playerT))
+                                    updateFrame:Show()
+                                    WaitAndCheckFrameHidden(updateFrame, 5, function(result)
+                                        if not result then
+                                            updateFrame:Hide()
+                                            print("Equip failed!")
+                                            BotEquippmentManagerMainFrame()
+                                            return
+                                        end
+                                    end)
+                                else
+                                    print("Error: Unable to parse itemID from itemLink.")
+                                end
+                            else
                                 print("No item data available for slotID:", slotID)
                             end
                         end
@@ -436,7 +463,7 @@ function BotEquippmentManagerMainFrame()
                 equipmentTable = {}
                 tempSlots = {}
                 -- Ensure we are listening for the new target's inventory changes
-                botMainInspectFrame:RegisterEvent("UNIT_INVENTORY_CHANGED")
+                botMainInspectFrame:UnregisterEvent("UNIT_INVENTORY_CHANGED")
                 BotEquippmentManagerMainFrame() -- Refresh UI as needed
             end
         end)
@@ -525,11 +552,11 @@ function BotEquippmentManagerMainFrame()
 
     --Re-register event if needed
     if not botMainInspectFrame:IsEventRegistered("UNIT_INVENTORY_CHANGED") then
-        print("Re-registering UNIT_INVENTORY_CHANGED event")
+        --print("Re-registering UNIT_INVENTORY_CHANGED event")
         botMainInspectFrame:RegisterEvent("UNIT_INVENTORY_CHANGED") -- Register the event
     end
     if not botMainInspectFrame:IsEventRegistered("PLAYER_TARGET_CHANGED") then
-        print("Re-registering PLAYER_TARGET_CHANGED event")
+        --print("Re-registering PLAYER_TARGET_CHANGED event")
         botMainInspectFrame:RegisterEvent("PLAYER_TARGET_CHANGED") -- Register the event
     end
 
@@ -581,17 +608,10 @@ function BotEquippmentManagerMainFrame()
                 slot.slotNameText:SetText(slotName)
                 slot.slotNameText:SetAlpha(1) -- Ensure text is fully opaque
 
-                -- Slot icon
-                slot.icon = botEquipmentFrame:CreateTexture(nil, "ARTWORK")
-                slot.icon:SetSize(30, 30)
-                slot.icon:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 75, -55 - (validSlotIndex * 40) + 82)
-                slot.icon:SetTexture("Interface/Icons/INV_Misc_QuestionMark")
-                slot.icon:SetAlpha(1) -- Ensure icon is fully opaque
-
                 -- Item text button
                 slot.itemText = CreateFrame("Button", nil, botEquipmentFrame)
                 slot.itemText:SetSize(250, 40)
-                slot.itemText:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 115, -55 - (validSlotIndex * 40) + 90)
+                slot.itemText:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 120, -55 - (validSlotIndex * 40) + 90)
                 slot.itemText:SetText("Empty")
                 slot.itemText:SetNormalFontObject(GameFontHighlight)
                 slot.itemText:SetHighlightFontObject(GameFontNormal)
@@ -616,18 +636,38 @@ function BotEquippmentManagerMainFrame()
                         slot.itemText:GetFontString():SetText("Empty")
                     end
                 end)
-                -- Create a border for the button
                 slot.itemTextBorder = CreateFrame("Frame", nil, botEquipmentFrame,
                     BackdropTemplateMixin and "BackdropTemplate")
                 slot.itemTextBorder:SetSize(292, 42) -- Slightly larger than the button
-                slot.itemTextBorder:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 70,
+                slot.itemTextBorder:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 75,
                     -56 - (validSlotIndex * 40) + 90)
                 slot.itemTextBorder:SetBackdrop({
-                    bgFile = nil,                                      -- No background
-                    edgeFile = "Interface/Tooltips/UI-Tooltip-Border", -- Border texture
-                    edgeSize = 12,                                     -- Thickness of the border
+                    bgFile = "Interface/ChatFrame/ChatFrameBackground", -- Background texture for dark gray
+                    edgeFile = "Interface/Tooltips/UI-Tooltip-Border",  -- Border texture
+                    edgeSize = 12,                                      -- Thickness of the border
                 })
-                slot.itemTextBorder:SetBackdropBorderColor(1, 1, 1, 1) -- White color with full opacity
+                slot.itemTextBorder:SetBackdropBorderColor(1, 1, 1, 1)  -- White border color (full opacity)
+                slot.itemTextBorder:SetBackdropColor(0.1, 0.1, 0.1, 1)  -- Dark gray background (RGB values + opacity)
+
+                -- Slot icon
+                slot.icon = slot.itemTextBorder:CreateTexture(nil, "OVERLAY") -- Parent icon to itemTextBorder
+                slot.icon:SetSize(30, 30)
+                slot.icon:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 80, -55 - (validSlotIndex * 40) + 82)
+                slot.icon:SetTexture("Interface/Icons/INV_Misc_QuestionMark")
+                slot.icon:SetAlpha(1) -- Ensure icon is fully opaque
+
+                -- Create the Refresh button
+                local refreshButton = CreateFrame("Button", nil, botEquipmentFrame, "UIPanelButtonTemplate")
+                refreshButton:SetSize(130, 30)                                          -- Width: 100, Height: 30
+                refreshButton:SetPoint("BOTTOM", botEquipmentFrame, "BOTTOM", 100, -30) -- Position it at the bottom of the frame
+                refreshButton:SetText("Refresh")                                        -- Set button text
+
+                -- Left-click action (you can add your functionality here)
+                refreshButton:SetScript("OnClick", function(self, button)
+                    if button == "LeftButton" then
+                        BotEquippmentManagerMainFrame()
+                    end
+                end)
 
                 -- Store the slot in the slots table
                 botEquipmentFrame.slots[slotID] = slot
@@ -638,7 +678,7 @@ function BotEquippmentManagerMainFrame()
     end
 
     -- Refresh content dynamically
-    RefreshMainFrameContent()
+    UpdateBotEquipmentFrame()
 
     -- Create the BagFrame
     if not botBagItemsFrame then

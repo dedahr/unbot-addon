@@ -147,7 +147,7 @@ local function RefreshMainFrameContent()
             end)
             slot.itemText:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-            -- Update right-click unequip action
+            -- Update leftclick unequip action
             slot.itemText:SetScript("OnClick", function(self, button)
                 if botMainInspectFrame and botMainInspectFrame:IsShown() then
                     if button == "LeftButton" and slot.itemLink then
@@ -257,7 +257,7 @@ local function UpdateBagFrame(message, bagFrame)
                         slotTexture:SetTexture("Interface/Icons/INV_Misc_QuestionMark") -- Default for uncached items
                     end
 
-                    -- Update tooltip functionality
+                    -- Update tooltip
                     --local itemID = string.match(itemData.itemLink, "Hitem:(%d+):")
                     local capturedItemLink = itemData and itemData.itemLink -- Capture the link for this specific slot
                     slot:SetScript("OnEnter", function(self)
@@ -350,7 +350,7 @@ local function UpdateBagFrame(message, bagFrame)
                         GameTooltip:Hide()
                     end)
 
-                    -- Add right-click functionality for empty slots
+                    -- Add left-click functionality for empty slots
                     slot:SetScript("OnMouseUp", function(self, button)
                         if button == "LeftButton" then
                             -- Handle any additional actions for empty slots here
@@ -394,7 +394,7 @@ function BotEquippmentManagerMainFrame()
         return
     end
 
-    if not UnitInParty("target") or not UnitInRaid("target") then
+    if not UnitInParty("target") and not UnitInRaid("target") then
         print("Target is not in your party/raid!")
         return
     end
@@ -441,9 +441,8 @@ function BotEquippmentManagerMainFrame()
             end
         end)
         -- Enable frame movement
-        botMainInspectFrame:EnableMouse(true) -- Allow mouse interaction
-        botMainInspectFrame:SetMovable(true)  -- Make it movable
-
+        botMainInspectFrame:EnableMouse(true)             -- Allow mouse interaction
+        botMainInspectFrame:SetMovable(true)              -- Make it movable
         -- Add drag functionality
         botMainInspectFrame:RegisterForDrag("LeftButton") -- Drag with left mouse button
         botMainInspectFrame:SetScript("OnDragStart", function(self)
@@ -452,7 +451,6 @@ function BotEquippmentManagerMainFrame()
         botMainInspectFrame:SetScript("OnDragStop", function(self)
             self:StopMovingOrSizing() -- Stop moving the frame
         end)
-
         botMainInspectFrame:SetSize(650, 785)
         botMainInspectFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 100)
         botMainInspectFrame:SetBackdrop({
@@ -464,6 +462,8 @@ function BotEquippmentManagerMainFrame()
             insets = { left = 4, right = 4, top = 4, bottom = 4 }
         })
         botMainInspectFrame:SetBackdropColor(0, 0, 0, 1)
+        botMainInspectFrame:SetFrameStrata("HIGH") -- Set the strata so it appears above other frames
+        botMainInspectFrame:SetFrameLevel(10)
 
         -- Add close button
         local closeButton = CreateFrame("Button", nil, botMainInspectFrame, "UIPanelCloseButton")
@@ -479,23 +479,23 @@ function BotEquippmentManagerMainFrame()
             botMainInspectFrame:Hide()
         end)
 
-        -- Title and labels
+        -- Title label
         local titleText = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         titleText:SetPoint("TOP", botMainInspectFrame, "TOP", 0, -10)
         botMainInspectFrame.titleText = titleText
-
+        -- Class label
         local classText = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         classText:SetPoint("TOP", titleText, "BOTTOM", 0, -10)
         botMainInspectFrame.classText = classText
-
+        --Level label
         local levelText = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         levelText:SetPoint("TOP", classText, "BOTTOM", 0, -5)
         botMainInspectFrame.levelText = levelText
-
+        --Player equipment label
         local leftLabel = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         leftLabel:SetPoint("TOP", botMainInspectFrame, "TOP", -250, -50)
         leftLabel:SetText("Player equipment")
-
+        --Items in bags label
         local rightLabel = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         rightLabel:SetPoint("TOP", botMainInspectFrame, "TOP", 150, -50)
         rightLabel:SetText("Items in bags")
@@ -506,18 +506,19 @@ function BotEquippmentManagerMainFrame()
         updateFrame:SetPoint("CENTER", botMainInspectFrame, "CENTER", 0, 0) -- Center it within the main frame
         updateFrame:SetFrameStrata("HIGH")                                  -- Set the strata so it appears above other frames
         updateFrame:SetFrameLevel(20)                                       -- Increase the frame level to ensure it overlays
-        --updateFrame:Show()                                                      -- Initially hidden
-        -- Add a background and border
+        --updateFrame:Show()                                                -- Initially hidden
+        -- Ensure full opacity for the content frame
+        updateFrame:SetAlpha(1)                                   -- Fully opaque
         updateFrame:SetBackdrop({
-            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+            bgFile = "Interface\\Buttons\\WHITE8X8",              -- Solid background
             edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-            tile = true,
-            tileSize = 16,
-            edgeSize = 16,
-            insets = { left = 4, right = 4, top = 4, bottom = 4 }
+            tile = true,                                          -- Tile the backgroundTexture
+            edgeSize = 16,                                        -- Thickness of the border
+            insets = { left = 4, right = 4, top = 4, bottom = 4 } -- Inset for the border
         })
-        -- Add text to the "Updating..." frame
-        local updateText = updateFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge") -- Change to a larger font
+        updateFrame:SetBackdropColor(0.1, 0.1, 0.1, 1)
+        -- Add text to the frame
+        local updateText = updateFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         updateText:SetPoint("CENTER", updateFrame, "CENTER", 0, 0)
         updateText:SetText("Updating...")
     end
@@ -575,7 +576,7 @@ function BotEquippmentManagerMainFrame()
 
                 -- Slot name
                 slot.slotNameText = botEquipmentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-                slot.slotNameText:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 5,
+                slot.slotNameText:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 3,
                     -85 - (validSlotIndex * 40) + 90 + 15)
                 slot.slotNameText:SetText(slotName)
                 slot.slotNameText:SetAlpha(1) -- Ensure text is fully opaque
@@ -583,7 +584,7 @@ function BotEquippmentManagerMainFrame()
                 -- Slot icon
                 slot.icon = botEquipmentFrame:CreateTexture(nil, "ARTWORK")
                 slot.icon:SetSize(30, 30)
-                slot.icon:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 75, -55 - (validSlotIndex * 40) + 90)
+                slot.icon:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 75, -55 - (validSlotIndex * 40) + 82)
                 slot.icon:SetTexture("Interface/Icons/INV_Misc_QuestionMark")
                 slot.icon:SetAlpha(1) -- Ensure icon is fully opaque
 
@@ -596,7 +597,6 @@ function BotEquippmentManagerMainFrame()
                 slot.itemText:SetHighlightFontObject(GameFontNormal)
                 slot.itemText:GetFontString():SetPoint("LEFT", slot.itemText, "LEFT", 5, 0)
                 slot.itemText:SetAlpha(1) -- Ensure button text is fully opaque
-
                 -- Tooltip functionality
                 slot.itemText:SetScript("OnEnter", function(self)
                     if slot.itemLink then
@@ -606,8 +606,7 @@ function BotEquippmentManagerMainFrame()
                     end
                 end)
                 slot.itemText:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
-                -- Right-click unequip action
+                -- Left-click unequip action
                 slot.itemText:RegisterForClicks("LeftButtonUp")
                 slot.itemText:SetScript("OnClick", function(self, button)
                     if button == "LeftButton" and slot.itemLink then
@@ -617,6 +616,18 @@ function BotEquippmentManagerMainFrame()
                         slot.itemText:GetFontString():SetText("Empty")
                     end
                 end)
+                -- Create a border for the button
+                slot.itemTextBorder = CreateFrame("Frame", nil, botEquipmentFrame,
+                    BackdropTemplateMixin and "BackdropTemplate")
+                slot.itemTextBorder:SetSize(292, 42) -- Slightly larger than the button
+                slot.itemTextBorder:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 70,
+                    -56 - (validSlotIndex * 40) + 90)
+                slot.itemTextBorder:SetBackdrop({
+                    bgFile = nil,                                      -- No background
+                    edgeFile = "Interface/Tooltips/UI-Tooltip-Border", -- Border texture
+                    edgeSize = 12,                                     -- Thickness of the border
+                })
+                slot.itemTextBorder:SetBackdropBorderColor(1, 1, 1, 1) -- White color with full opacity
 
                 -- Store the slot in the slots table
                 botEquipmentFrame.slots[slotID] = slot
@@ -682,10 +693,10 @@ function BotEquippmentManagerMainFrame()
                     GameTooltip:Hide()
                 end)
 
-                -- Add right-click functionality
+                -- Add left-click functionality
                 slot:SetScript("OnMouseDown", function(self, button)
                     if button == "LeftButton" then
-                        -- Highlight effect for right-click
+                        -- Highlight effect for left-click
                         slotTexture:SetPoint("TOPLEFT", self, "TOPLEFT", 2, -2)
                         slotTexture:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -2, 2)
                     end

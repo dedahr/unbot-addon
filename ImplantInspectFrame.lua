@@ -1,5 +1,4 @@
-﻿
-function UnBotCheckOffHand(dstFrame, targetName)
+﻿function UnBotCheckOffHand(dstFrame, targetName)
 	local slot16Linnk = GetInventoryItemLink(InspectFrame.unit, 16);
 	local slot17Linnk = GetInventoryItemLink(InspectFrame.unit, 17);
 	--DisplayInfomation("Check "..tostring(slot16Linnk).." and "..tostring(slot17Linnk));
@@ -8,7 +7,7 @@ function UnBotCheckOffHand(dstFrame, targetName)
 		if (item ~= nil and item[11] ~= "INVTYPE_2HWEAPON") then
 			local matchItems = UnBotMatchItemBySlotType(17, dstFrame.bagItems);
 			local selectItem = nil;
-			for i=1, #matchItems do
+			for i = 1, #matchItems do
 				local item = matchItems[i];
 				if (item[8] <= tonumber(UnitLevel(targetName))) then
 					if (selectItem == nil) then
@@ -20,10 +19,10 @@ function UnBotCheckOffHand(dstFrame, targetName)
 			end
 			if (selectItem ~= nil) then
 				local itemLink
-				_,itemLink,_,_,_,_,_,_,_,_ = GetItemInfo(tostring(selectItem[3]));
-				SendChatMessage("e "..tostring(itemLink), "WHISPER", nil, targetName);
+				_, itemLink, _, _, _, _, _, _, _, _ = GetItemInfo(tostring(selectItem[3]));
+				SendChatMessage("e " .. tostring(itemLink), "WHISPER", nil, targetName);
 				dstFrame.canCheckEquip = false;
-				for i=1, #(dstFrame.bagItems) do
+				for i = 1, #(dstFrame.bagItems) do
 					if (dstFrame.bagItems[i][3] == selectItem[3]) then
 						table.remove(dstFrame.bagItems, i);
 						break;
@@ -37,11 +36,11 @@ end
 
 function UnBotGetItemIDByLink(itemLink)
 	local info = tostring(itemLink);
-	local i1,i2 = string.find(info,"Hitem:");
+	local i1, i2 = string.find(info, "Hitem:");
 	if (i1 == nil or i2 == nil) then
 		return nil;
 	end
-	local itemID = tonumber(string.match(info,"%d+",i2));
+	local itemID = tonumber(string.match(info, "%d+", i2));
 	return itemID;
 end
 
@@ -55,7 +54,7 @@ function UnBotBindFrameFunction(frameName, srcFunc, dstFunc)
 		return;
 	end
 	local dstFrameScript = dstFrame:GetScript(srcFunc);
-	setglobal("SRC_"..frameName.."_"..srcFunc, dstFrameScript);
+	setglobal("SRC_" .. frameName .. "_" .. srcFunc, dstFrameScript);
 	dstFrame:SetScript(srcFunc, dstFunc);
 end
 
@@ -112,7 +111,7 @@ function UnBotInspectFrameCanOperator()
 	if (targetName == UnitName("player")) then
 		return false;
 	end
-	
+
 	return true;
 end
 
@@ -141,7 +140,7 @@ function UnBotInspectPaperDollFrame_OnShow(...)
 	if (dstAction ~= nil) then
 		dstAction(...);
 	end
-	--DisplayInfomation("UnBot UnBotInspectFrame_OnShow "..UnitName(InspectFrame.unit));
+	--DisplayInfomation("UnBot UnBotInspectFrame_OnShow " .. UnitName(InspectFrame.unit));
 	local dstFrame = _G["InspectPaperDollFrame"];
 	if (dstFrame == nil) then
 		return;
@@ -152,18 +151,19 @@ function UnBotInspectPaperDollFrame_OnShow(...)
 	dstFrame.waitFlushTime = 2;
 	dstFrame.waitReloadTime = 0.5;
 	if (dstFrame.ubHelpText == nil) then
-		dstFrame.ubHelpText = dstFrame:CreateFontString(dstFrame:GetName().."UnBotHelp","ARTWORK");
-		dstFrame.ubHelpText:SetFont("Fonts\\FRIZQT__.TTF",12);
-		dstFrame.ubHelpText:SetTextColor(0,0.8,0.8,1);
-		dstFrame.ubHelpText:SetText("In the equipment slot: Left mouse button to change the equipment and right mouse button to remove the equipment.");
-		dstFrame.ubHelpText:SetPoint("TOP",dstFrame,"TOP",15,-58);
-		dstFrame.ubHelpText:SetShadowColor(0,0,0);
-		dstFrame.ubHelpText:SetShadowOffset(1,-1);
+		dstFrame.ubHelpText = dstFrame:CreateFontString(dstFrame:GetName() .. "UnBotHelp", "ARTWORK");
+		dstFrame.ubHelpText:SetFont("Fonts\\FRIZQT__.TTF", 12);
+		dstFrame.ubHelpText:SetTextColor(0, 0.8, 0.8, 1);
+		dstFrame.ubHelpText:SetText(
+			"In the equipment slot: Left mouse button to change the equipment and right mouse button to remove the equipment.");
+		dstFrame.ubHelpText:SetPoint("TOP", dstFrame, "TOP", 15, -58);
+		dstFrame.ubHelpText:SetShadowColor(0, 0, 0);
+		dstFrame.ubHelpText:SetShadowOffset(1, -1);
 	end
 
 	if (EquipInventoryFrame.titleIcon == nil) then
 		EquipInventoryFrame.titleIcon = EquipInventoryFrame:CreateTexture(nil, "BACKGROUND");
-		EquipInventoryFrame.titleIcon:SetSize(36,36);
+		EquipInventoryFrame.titleIcon:SetSize(36, 36);
 		SetPortraitTexture(EquipInventoryFrame.titleIcon, "player");
 		EquipInventoryFrame.titleIcon:SetPoint("TOPLEFT", EquipInventoryFrame, "TOPLEFT", 8, -6);
 	end
@@ -188,7 +188,7 @@ function UnBotInspectPaperDollFrame_OnEvent(...)
 			UnBotInspectPaperDollFrameRecvItem(dstFrame, arg2, arg1);
 		end
 	end
-	if ( event == "PLAYER_TARGET_CHANGED" ) then
+	if (event == "PLAYER_TARGET_CHANGED") then
 		UnBotFlushInspectPaperDollFrame(dstFrame);
 	end
 end
@@ -202,14 +202,14 @@ function UnBotInspectPaperDollFrame_OnUpdate(...)
 	if (dstFrame == nil) then
 		return;
 	end
-	
+
 	if (dstFrame.flushTick > 0) then
-		if  ((GetTime() - dstFrame.flushTick) > dstFrame.waitFlushTime) then
+		if ((GetTime() - dstFrame.flushTick) > dstFrame.waitFlushTime) then
 			dstFrame.flushTick = 0;
 		end
 	end
 	if (dstFrame.reloadTick > 0) then
-		if  ((GetTime() - dstFrame.reloadTick) > dstFrame.waitReloadTime) then
+		if ((GetTime() - dstFrame.reloadTick) > dstFrame.waitReloadTime) then
 			dstFrame.reloadTick = 0;
 			InspectFrame_Show(InspectFrame.unit);
 		end
@@ -228,43 +228,44 @@ function UnBotQueryItemByID(itemID)
 	local itemSubType;
 	local itemEquipLoc;
 	local itemTexture;
-	itemName,_,itemQuality,itemLevel,itemMinLevel,itemType,itemSubType,_,itemEquipLoc,itemTexture = GetItemInfo(itemID);
+	itemName, _, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, _, itemEquipLoc, itemTexture = GetItemInfo(
+		itemID);
 	local needQuery = false;
 	if (itemName == nil or itemTexture == nil) then
-		GameTooltip:SetHyperlink("item:"..itemID..":0:0:0:0:0:0:0");
+		GameTooltip:SetHyperlink("item:" .. itemID .. ":0:0:0:0:0:0:0");
 		itemTexture = "Interface\\Icons\\INV_Misc_QuestionMark";
-		needQuery = true;		
+		needQuery = true;
 	end
 	local item = {
-		[1] = 0, 
-		[2] = needQuery, 
+		[1] = 0,
+		[2] = needQuery,
 		[3] = itemID,
-		[4] = itemTexture, 
-		[5] = itemName, 
+		[4] = itemTexture,
+		[5] = itemName,
 		[6] = itemQuality,
-		[7] = itemLevel, 
-		[8] = itemMinLevel, 
+		[7] = itemLevel,
+		[8] = itemMinLevel,
 		[9] = itemType,
-		[10] = itemSubType, 
+		[10] = itemSubType,
 		[11] = itemEquipLoc,
 	};
 	return item;
 end
 
 function UnBotUpdateItems(items)
-	for i=1, #items do
+	for i = 1, #items do
 		local item = items[i];
 		local itemID = item[3];
 		if (item[2] == true) then -- need query
-			item[5],_,item[6],item[7],item[8],item[9],item[10],_,item[11],item[4] = GetItemInfo(itemID);
+			item[5], _, item[6], item[7], item[8], item[9], item[10], _, item[11], item[4] = GetItemInfo(itemID);
 			item[2] = false;
 			if (item[5] == nil or item[4] == nil) then
 				--local itemQ = Item:CreateFromItemID(item[3]);
 				--itemQ:ContinueOnItemLoad(function()
-				GameTooltip:SetHyperlink("item:"..itemID..":0:0:0:0:0:0:0");
+				GameTooltip:SetHyperlink("item:" .. itemID .. ":0:0:0:0:0:0:0");
 				--item[5] = itemQ:GetItemName();	-- Item Name
-				item[4] = "Interface\\Icons\\INV_Misc_QuestionMark";	-- Item Icon/Texture
-				item[2] = true;											-- Item Need query
+				item[4] = "Interface\\Icons\\INV_Misc_QuestionMark"; -- Item Icon/Texture
+				item[2] = true;                          -- Item Need query
 				--end)
 			end
 		end
@@ -326,10 +327,10 @@ function UnBotMatchItemBySlotType(slot, items)
 	-- slot = 12 or 14 process
 	local outItems = {};
 	local equipLocs = UnBotGetEquipLocBySlotID(tonumber(slot));
-	for i=1, #items do
+	for i = 1, #items do
 		local item = items[i];
 		if (item[2] == false and item[11] ~= "") then
-			for j=1, #equipLocs do
+			for j = 1, #equipLocs do
 				if (equipLocs[j] == item[11]) then
 					table.insert(outItems, item);
 					break;
@@ -344,11 +345,11 @@ function UnBotInspectPaperDollFrameRecvItem(dstFrame, targetName, info)
 	if (IsFilterInfo(info) == true) then
 		return;
 	end
-	local i1,i2 = string.find(info,"Hitem:");
+	local i1, i2 = string.find(info, "Hitem:");
 	if (i1 == nil or i2 == nil) then
 		return;
 	end
-	local itemID = tonumber(string.match(info,"%d+",i2));
+	local itemID = tonumber(string.match(info, "%d+", i2));
 	if (itemID == nil or itemID == 0) then
 		return;
 	end
@@ -371,7 +372,7 @@ function UnBotInspectSlotShowItemChange(dstFrame, itemLink)
 	end
 	EquipInventoryFrame.targetName = UnitName(InspectFrame.unit);
 	EquipInventoryFrame.inventoryItems = UnBotMatchItemBySlotType(dstFrame:GetID(), ipdf.bagItems);
-	for i=1, #(EquipInventoryFrame.inventoryItemButtons) do
+	for i = 1, #(EquipInventoryFrame.inventoryItemButtons) do
 		local itemBtn = EquipInventoryFrame.inventoryItemButtons[i];
 		if (i > #(EquipInventoryFrame.inventoryItems)) then
 			itemBtn:Hide();
@@ -388,7 +389,7 @@ end
 
 function UnBotInspectSlotUnItem(dstFrame, itemLink)
 	if (itemLink ~= nil and UnBotInspectFrameCanOperator() == true) then
-		SendChatMessage("ue "..tostring(itemLink), "WHISPER", nil, UnitName(InspectFrame.unit));
+		SendChatMessage("ue " .. tostring(itemLink), "WHISPER", nil, UnitName(InspectFrame.unit));
 		UnBotStartReloadInspectFrame();
 	end
 end

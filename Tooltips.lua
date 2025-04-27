@@ -1,6 +1,6 @@
 ﻿UnBotCommandRealize = {
 	[0] = CommandUnBotSetting,
-	[11] = CommandInspectFrame,
+	--[11] = CommandInspectFrame,
 	[12] = CommandInitForLevel,
 	[54] = CommandShowStrategyFrame,
 	[64] = CommandUnBotItemList,
@@ -452,9 +452,9 @@ UnBotExecuteCommand = {
 	-- [6] = ".playerbot bot talent=1",
 	-- [7] = ".playerbot bot talent=2",
 	-- [8] = ".playerbot bot talent=3",
-	[9] = "reset botAI",    --/p
-	[10] = "reset botAI",   --/w %s
-	[11] = "inspect",       --/w %s
+	[9] = "reset botAI", --/p
+	[10] = "reset botAI", --/w %s
+	--[11] = "inspect",       --/w %s
 	-- [12] = ".playerbot bot initforlevel ",
 	[13] = "summon",        --/p
 	[14] = "summon",        --/w %s

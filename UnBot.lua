@@ -390,7 +390,7 @@ end
 function UnBotFrameUpdate(ubFrame, tick)
 	if (ubFrame.DelayInitTime > 0 and tick > ubFrame.DelayInitTime) then
 		ubFrame.DelayInitTime = 0;
-		UnBotInitInspectFrame();
+		--UnBotInitInspectFrame();
 	end
 end
 

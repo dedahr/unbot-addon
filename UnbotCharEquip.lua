@@ -6,26 +6,26 @@ local slotMap = {
     ["INVTYPE_HEAD"] = 1,
     ["INVTYPE_NECK"] = 2,
     ["INVTYPE_SHOULDER"] = 3,
-    ["INVTYPE_CHEST"] = 4,
-    ["INVTYPE_ROBE"] = 4,
-    ["INVTYPE_WAIST"] = 5,
-    ["INVTYPE_LEGS"] = 6,
-    ["INVTYPE_FEET"] = 7,
-    ["INVTYPE_WRIST"] = 8,
-    ["INVTYPE_HAND"] = 9,
-    ["INVTYPE_FINGER"] = 10,
-    ["INVTYPE_TRINKET"] = 12,
-    ["INVTYPE_CLOAK"] = 14,
-    ["INVTYPE_WEAPON"] = 15,
-    ["INVTYPE_WEAPONMAINHAND"] = 15,
-    ["INVTYPE_2HWEAPON"] = 15,
-    ["INVTYPE_SHIELD"] = 16,
-    ["INVTYPE_WEAPONOFFHAND"] = 16,
-    ["INVTYPE_RANGED"] = 17,
-    ["INVTYPE_RANGEDRIGHT"] = 17,
-    ["INVTYPE_THROWN"] = 17,
-    ["INVTYPE_RELIC"] = 17,
-    ["INVTYPE_HOLDABLE"] = 17,
+    ["INVTYPE_CHEST"] = 5,
+    ["INVTYPE_ROBE"] = 5,
+    ["INVTYPE_WAIST"] = 6,
+    ["INVTYPE_LEGS"] = 7,
+    ["INVTYPE_FEET"] = 8,
+    ["INVTYPE_WRIST"] = 9,
+    ["INVTYPE_HAND"] = 10,
+    ["INVTYPE_FINGER"] = 11,
+    ["INVTYPE_TRINKET"] = 13,
+    ["INVTYPE_CLOAK"] = 15,
+    ["INVTYPE_WEAPON"] = 16,
+    ["INVTYPE_WEAPONMAINHAND"] = 16,
+    ["INVTYPE_2HWEAPON"] = 16,
+    ["INVTYPE_SHIELD"] = 17,
+    ["INVTYPE_WEAPONOFFHAND"] = 17,
+    ["INVTYPE_RANGED"] = 18,
+    ["INVTYPE_RANGEDRIGHT"] = 18,
+    ["INVTYPE_THROWN"] = 18,
+    ["INVTYPE_RELIC"] = 18,
+    ["INVTYPE_HOLDABLE"] = 18,
 }
 local itemData = {}
 
@@ -96,8 +96,8 @@ end
 local function PrepareEquipmentTable()
     if not equipmentLoaded then
         for slotID = 1, 18 do
-            if slotID ~= 4 then -- Skip Shirt slot (Slot ID 4)
-                --GameTooltip:SetInventoryItem(playerT, slotID) -- Force tooltip cache
+            if slotID ~= 4 then                               -- Skip Shirt slot (Slot ID 4)
+                GameTooltip:SetInventoryItem(playerT, slotID) -- Force tooltip cache
                 local itemLink = GetInventoryItemLink(playerT, slotID)
                 local itemTexture = GetInventoryItemTexture(playerT, slotID)
                 local itemID = itemLink and string.match(itemLink, "Hitem:(%d+):")
@@ -131,7 +131,10 @@ local function UpdateBotEquipmentFrame()
             slot.icon:SetTexture(slotData.itemTexture or "Interface/Icons/INV_Misc_QuestionMark")
 
             -- Update the slot's item text
-            slot.itemText:GetFontString():SetText(slotData.itemLink or "Empty")
+            if slotData.itemID then
+                local itemName, itemLink, _, itemLevel, _, _, _, _, itemEquipLoc = GetItemInfo(slotData.itemID)
+                slot.itemText:GetFontString():SetText((itemLevel .. " " .. slotData.itemLink) or "Empty")
+            end
 
             -- Update slot-specific data for functionality
             slot.itemLink = slotData.itemLink -- Update the tooltip's itemLink
@@ -145,7 +148,9 @@ local function UpdateBotEquipmentFrame()
                     GameTooltip:Show()
                 end
             end)
-            slot.itemText:SetScript("OnLeave", function() GameTooltip:Hide() end)
+            slot.itemText:SetScript("OnLeave", function()
+                GameTooltip:Hide()
+            end)
 
             -- Update leftclick unequip action
             slot.itemText:SetScript("OnClick", function(self, button)
@@ -158,7 +163,6 @@ local function UpdateBotEquipmentFrame()
                             itemTexture = GetItemIcon(itemID),
                         }
                         -- Send unequip command to playerbot
-                        NotifyInspect(playerT) -- Forces data retrieval for the target
                         SendChatMessage("ue " .. slot.itemLink, "WHISPER", nil, UnitName(playerT))
                         updateFrame:Show()
                         -- Reset the slot dynamically when unequipped
@@ -200,7 +204,7 @@ local function UpdateBagFrame(message, bagFrame)
     end
     --print("Received message: ", message)
     -- Parse the incoming message and populate wearableItems
-    for i = 1, 17 do
+    for i = 1, 18 do
         wearableItems[i] = {} -- Each row has up to 5 slots
     end
 
@@ -237,152 +241,152 @@ local function UpdateBagFrame(message, bagFrame)
     end
 
     -- Update the existing slots
-    for rowIndex = 1, 17 do
-        local row = wearableItems[rowIndex] or {}
+    for rowIndex = 1, 18 do
+        if (rowIndex ~= 4) then
+            local row = wearableItems[rowIndex] or {}
 
-        for colIndex = 1, 5 do
-            local slotIndex = (rowIndex - 1) * 5 + colIndex -- Unique index for each slot
-            itemData = row[colIndex] or {}                  -- Use empty data if no item exists
+            for colIndex = 1, 5 do
+                local slotIndex = (rowIndex - 1) * 5 + colIndex -- Unique index for each slot
+                itemData = row[colIndex] or {}                  -- Use empty data if no item exists
 
-            -- Reference the existing slot
-            local slot = bagFrame.slots[slotIndex]
-            if slot then
-                -- Update the slot texture
-                local slotTexture = slot:GetRegions() -- Retrieve the slot's existing texture
-                if itemData.itemLink then
-                    --print("Found item in bag: ", itemData.itemLink)
-                    local _, _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(itemData.itemLink)
-                    if itemTexture then
-                        slotTexture:SetTexture(itemTexture)                             -- Use item texture
-                    else
-                        slotTexture:SetTexture("Interface/Icons/INV_Misc_QuestionMark") -- Default for uncached items
-                    end
-
-                    -- Update tooltip
-                    --local itemID = string.match(itemData.itemLink, "Hitem:(%d+):")
-                    local capturedItemLink = itemData and itemData.itemLink -- Capture the link for this specific slot
-                    slot:SetScript("OnEnter", function(self)
-                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                        if capturedItemLink then
-                            --print("Setting hyperlink for: ", capturedItemLink)
-                            GameTooltip:SetHyperlink(capturedItemLink)
+                -- Reference the existing slot
+                local slot = bagFrame.slots[slotIndex]
+                if slot then
+                    -- Update the slot texture
+                    local slotTexture = slot:GetRegions() -- Retrieve the slot's existing texture
+                    if itemData.itemLink then
+                        --print("Found item in bag: ", itemData.itemLink)
+                        local _, _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(itemData.itemLink)
+                        if itemTexture then
+                            slotTexture:SetTexture(itemTexture)                             -- Use item texture
                         else
+                            slotTexture:SetTexture("Interface/Icons/INV_Misc_QuestionMark") -- Default for uncached items
+                        end
+
+                        -- Update tooltip
+                        --local itemID = string.match(itemData.itemLink, "Hitem:(%d+):")
+                        local capturedItemLink = itemData and
+                            itemData.itemLink -- Capture the link for this specific slot
+                        slot:SetScript("OnEnter", function(self)
+                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                            if capturedItemLink then
+                                --print("Setting hyperlink for: ", capturedItemLink)
+                                GameTooltip:SetHyperlink(capturedItemLink)
+                            else
+                                GameTooltip:AddLine("Empty Slot")
+                            end
+                            GameTooltip:Show()
+                        end)
+                        slot:SetScript("OnLeave", function(self)
+                            GameTooltip:Hide()
+                        end)
+                        --Left Button
+                        slot:SetScript("OnMouseUp", function(self, button)
+                            if button == "LeftButton" then
+                                slotTexture:SetPoint("TOPLEFT", self, "TOPLEFT", 0, 0)
+                                slotTexture:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 0, 0)
+
+                                local slotID = self.slotID
+                                if not slotID then
+                                    print("Error: slotID is not defined for this slot.")
+                                    return
+                                end
+                                SendChatMessage("e " .. capturedItemLink, "WHISPER", nil, UnitName(playerT))
+                                updateFrame:Show()
+                                WaitAndCheckFrameHidden(updateFrame, 5, function(result)
+                                    if not result then
+                                        updateFrame:Hide()
+                                        print("Equip failed!")
+                                        BotEquippmentManagerMainFrame()
+                                        return
+                                    end
+                                end)
+                                if capturedItemLink then
+                                    local itemID = string.match(capturedItemLink, "Hitem:(%d+):")
+
+                                    if itemID then
+                                        if tempSlots[slotID] then
+                                            equipmentTable[slotID] = tempSlots[slotID]
+                                            tempSlots[slotID] = nil
+                                        else
+                                            equipmentTable[slotID] = {
+                                                itemID = tonumber(itemID),
+                                                itemLink = select(2, GetItemInfo(itemID)),
+                                                itemTexture = GetItemIcon(itemID),
+                                            }
+                                        end
+                                    else
+                                        print("Error: Unable to parse itemID from itemLink.")
+                                    end
+                                else
+                                    print("No item data available for slotID:", slotID)
+                                end
+                                -- send to 2nd slot for rings trinkets and weapons (we can't do that yet as PB doesnt have that command and all is RND thing)
+                                -- workaround is to unequip both slots and equip with left click 1st slot and right click 2nd
+                            elseif button == "RightButton" and (rowIndex == 11 or rowIndex == 13 or rowIndex == 16) then
+                                slotTexture:SetPoint("TOPLEFT", self, "TOPLEFT", 2, -2)
+                                slotTexture:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -2, 2)
+
+                                local slotID = self.slotID
+                                if not slotID then
+                                    print("Error: slotID is not defined for this slot.")
+                                    return
+                                end
+
+                                if capturedItemLink then
+                                    local itemID = string.match(capturedItemLink, "Hitem:(%d+):")
+                                    SendChatMessage("e " .. capturedItemLink, "WHISPER", nil, UnitName(playerT))
+                                    updateFrame:Show()
+                                    WaitAndCheckFrameHidden(updateFrame, 5, function(result)
+                                        if not result then
+                                            updateFrame:Hide()
+                                            print("Equip failed!")
+                                            BotEquippmentManagerMainFrame()
+                                            return
+                                        end
+                                    end)
+                                    if itemID then
+                                        -- Use slotID + 1 for equipmentTable assignment
+                                        local newSlotID = slotID + 1
+                                        if tempSlots[slotID] then
+                                            equipmentTable[newSlotID] = tempSlots[slotID]
+                                            tempSlots[slotID] = nil
+                                        else
+                                            equipmentTable[newSlotID] = {
+                                                itemID = tonumber(itemID),
+                                                itemLink = select(2, GetItemInfo(itemID)),
+                                                itemTexture = GetItemIcon(itemID),
+                                            }
+                                        end
+                                    else
+                                        print("Error: Unable to parse itemID from itemLink.")
+                                    end
+                                else
+                                    print("No item data available for slotID:", slotID)
+                                end
+                            end
+                        end)
+                    else
+                        -- Reset to default texture for empty slots
+                        slotTexture:SetTexture("Interface/Buttons/UI-EmptySlot")
+
+                        -- Reset tooltip
+                        slot:SetScript("OnEnter", function(self)
+                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
                             GameTooltip:AddLine("Empty Slot")
-                        end
-                        GameTooltip:Show()
-                    end)
-                    slot:SetScript("OnLeave", function(self)
-                        GameTooltip:Hide()
-                    end)
+                            GameTooltip:Show()
+                        end)
+                        slot:SetScript("OnLeave", function(self)
+                            GameTooltip:Hide()
+                        end)
 
-                    slot:SetScript("OnMouseUp", function(self, button)
-                        if button == "LeftButton" then
-                            -- Existing left-click functionality (unchanged)
-                            slotTexture:SetPoint("TOPLEFT", self, "TOPLEFT", 0, 0)
-                            slotTexture:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 0, 0)
-
-                            local slotID = self.slotID
-                            if not slotID then
-                                print("Error: slotID is not defined for this slot.")
-                                return
+                        -- Add left-click functionality for empty slots
+                        slot:SetScript("OnMouseUp", function(self, button)
+                            if button == "LeftButton" then
+                                -- Handle any additional actions for empty slots here
                             end
-
-                            if capturedItemLink then
-                                local itemID = string.match(capturedItemLink, "Hitem:(%d+):")
-                                NotifyInspect(playerT) -- Forces data retrieval for the target
-                                if itemID then
-                                    if tempSlots[slotID] then
-                                        equipmentTable[slotID] = tempSlots[slotID]
-                                        tempSlots[slotID] = nil
-                                    else
-                                        equipmentTable[slotID] = {
-                                            itemID = tonumber(itemID),
-                                            itemLink = select(2, GetItemInfo(itemID)),
-                                            itemTexture = GetItemIcon(itemID),
-                                        }
-                                    end
-                                    SendChatMessage("e " .. capturedItemLink, "WHISPER", nil, UnitName(playerT))
-                                    updateFrame:Show()
-                                    WaitAndCheckFrameHidden(updateFrame, 5, function(result)
-                                        if not result then
-                                            updateFrame:Hide()
-                                            print("Equip failed!")
-                                            BotEquippmentManagerMainFrame()
-                                            return
-                                        end
-                                    end)
-                                else
-                                    print("Error: Unable to parse itemID from itemLink.")
-                                end
-                            else
-                                print("No item data available for slotID:", slotID)
-                            end
-                            -- send to 2nd slot for rings trinkets and weapons (we can't do that yet as PB doesnt have that command and all is RND thing)
-                            -- workaround is to unequip both slots and equip with left click 1st slot and right click 2nd
-                        elseif button == "RightButton" and (rowIndex == 10 or rowIndex == 12 or rowIndex == 15) then
-                            slotTexture:SetPoint("TOPLEFT", self, "TOPLEFT", 2, -2)
-                            slotTexture:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -2, 2)
-
-                            local slotID = self.slotID
-                            if not slotID then
-                                print("Error: slotID is not defined for this slot.")
-                                return
-                            end
-
-                            if capturedItemLink then
-                                local itemID = string.match(capturedItemLink, "Hitem:(%d+):")
-                                NotifyInspect(playerT) -- Forces data retrieval for the target
-                                if itemID then
-                                    -- Use slotID + 1 for equipmentTable assignment
-                                    local newSlotID = slotID + 1
-                                    if tempSlots[slotID] then
-                                        equipmentTable[newSlotID] = tempSlots[slotID]
-                                        tempSlots[slotID] = nil
-                                    else
-                                        equipmentTable[newSlotID] = {
-                                            itemID = tonumber(itemID),
-                                            itemLink = select(2, GetItemInfo(itemID)),
-                                            itemTexture = GetItemIcon(itemID),
-                                        }
-                                    end
-                                    SendChatMessage("e " .. capturedItemLink, "WHISPER", nil, UnitName(playerT))
-                                    updateFrame:Show()
-                                    WaitAndCheckFrameHidden(updateFrame, 5, function(result)
-                                        if not result then
-                                            updateFrame:Hide()
-                                            print("Equip failed!")
-                                            BotEquippmentManagerMainFrame()
-                                            return
-                                        end
-                                    end)
-                                else
-                                    print("Error: Unable to parse itemID from itemLink.")
-                                end
-                            else
-                                print("No item data available for slotID:", slotID)
-                            end
-                        end
-                    end)
-                else
-                    -- Reset to default texture for empty slots
-                    slotTexture:SetTexture("Interface/Buttons/UI-EmptySlot")
-
-                    -- Reset tooltip
-                    slot:SetScript("OnEnter", function(self)
-                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                        GameTooltip:AddLine("Empty Slot")
-                        GameTooltip:Show()
-                    end)
-                    slot:SetScript("OnLeave", function(self)
-                        GameTooltip:Hide()
-                    end)
-
-                    -- Add left-click functionality for empty slots
-                    slot:SetScript("OnMouseUp", function(self, button)
-                        if button == "LeftButton" then
-                            -- Handle any additional actions for empty slots here
-                        end
-                    end)
+                        end)
+                    end
                 end
             end
         end
@@ -391,38 +395,52 @@ local function UpdateBagFrame(message, bagFrame)
     updateFrame:Hide()
 end
 
+local function HandleInvalidTarget(message)
+    print(message)
+    if botMainInspectFrame then
+        equipmentLoaded = false
+        equipmentTable = {}
+        tempSlots = {}
+        botMainInspectFrame:UnregisterEvent("PLAYER_TARGET_CHANGED")
+        botMainInspectFrame:UnregisterEvent("UNIT_INVENTORY_CHANGED")
+        botMainInspectFrame:Hide()
+    end
+end
+
 function BotEquippmentManagerMainFrame()
-    -- Check if the target is a player
+    -- Perform target checks
     if not UnitIsPlayer("target") then
-        print("The selected target is not a player!")
+        HandleInvalidTarget("The selected target is not a player!")
         return
     end
-    -- Check if the target is yourself
+
     if UnitIsUnit("target", "player") then
-        print("Can't target yourself!")
+        HandleInvalidTarget("Can't target yourself!")
         return
     end
 
-    -- Check if the target is alive
     if UnitIsDead("target") then
-        print("The target is dead!")
+        HandleInvalidTarget("The target is dead!")
         return
     end
 
-    -- Check if the target is within inspect range (distance code 1)
+    if not UnitIsConnected("target") then
+        HandleInvalidTarget("The target is offline!")
+        return
+    end
+
     if not CheckInteractDistance("target", 1) then
-        print("The target is out of inspect range!")
+        HandleInvalidTarget("The target is out of inspect range!")
         return
     end
 
-    -- Check if the target is in combat
     if UnitAffectingCombat("target") then
-        print("Target is in combat!")
+        HandleInvalidTarget("Target is in combat!")
         return
     end
 
     if not UnitInParty("target") and not UnitInRaid("target") then
-        print("Target is not in your party/raid!")
+        HandleInvalidTarget("Target is not in your party/raid!")
         return
     end
 
@@ -520,12 +538,33 @@ function BotEquippmentManagerMainFrame()
         botMainInspectFrame.levelText = levelText
         --Player equipment label
         local leftLabel = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        leftLabel:SetPoint("TOP", botMainInspectFrame, "TOP", -250, -50)
+        leftLabel:SetPoint("TOP", botMainInspectFrame, "TOP", -140, -28)
         leftLabel:SetText("Player equipment")
+        leftLabel:SetTextColor(1, 0, 0) --Red
+        leftLabel:SetJustifyH("LEFT")
+        leftLabel:SetWidth(200)
+        --Player equipment label help
+        local leftLabelHelp = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        leftLabelHelp:SetPoint("TOP", botMainInspectFrame, "TOP", -140, -40)
+        leftLabelHelp:SetText("Left click on item link\nto store item in bag")
+        leftLabelHelp:SetTextColor(0, 1, 0) --Green
+        leftLabelHelp:SetJustifyH("LEFT")
+        leftLabelHelp:SetWidth(200)
         --Items in bags label
         local rightLabel = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        rightLabel:SetPoint("TOP", botMainInspectFrame, "TOP", 150, -50)
+        rightLabel:SetPoint("TOP", botMainInspectFrame, "TOP", 198, -28)
         rightLabel:SetText("Items in bags")
+        rightLabel:SetTextColor(1, 0, 0) --Red
+        rightLabel:SetJustifyH("LEFT")
+        rightLabel:SetWidth(200)
+        --Items in bags label help
+        local rightLabelHelp = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        rightLabelHelp:SetPoint("TOP", botMainInspectFrame, "TOP", 198, -40)
+        rightLabelHelp:SetText(
+            "Left click on icon to equip item\nRight click to equip slot 2 for\nFinger 2, Trinket 2 and OH Wpn")
+        rightLabelHelp:SetTextColor(0, 1, 0) --Green
+        rightLabelHelp:SetJustifyH("LEFT")
+        rightLabelHelp:SetWidth(200)
 
         -- Create the "Updating..." frame
         updateFrame = CreateFrame("Frame", "UpdateFrame", botMainInspectFrame)
@@ -565,9 +604,9 @@ function BotEquippmentManagerMainFrame()
     updateFrame:Show()
 
     -- Update title and target details
-    botMainInspectFrame.titleText:SetText("Inspecting: " .. UnitName(playerT))
+    botMainInspectFrame.titleText:SetText(UnitName(playerT))
     local targetClass, _ = UnitClass(playerT)
-    botMainInspectFrame.classText:SetText("Class: " .. targetClass)
+    botMainInspectFrame.classText:SetText(targetClass)
     botMainInspectFrame.levelText:SetText("Level: " .. UnitLevel(playerT))
 
     -- Create content area for player equipment
@@ -625,7 +664,9 @@ function BotEquippmentManagerMainFrame()
                         GameTooltip:Show()
                     end
                 end)
-                slot.itemText:SetScript("OnLeave", function() GameTooltip:Hide() end)
+                slot.itemText:SetScript("OnLeave", function()
+                    GameTooltip:Hide()
+                end)
                 -- Left-click unequip action
                 slot.itemText:RegisterForClicks("LeftButtonUp")
                 slot.itemText:SetScript("OnClick", function(self, button)
@@ -638,7 +679,7 @@ function BotEquippmentManagerMainFrame()
                 end)
                 slot.itemTextBorder = CreateFrame("Frame", nil, botEquipmentFrame,
                     BackdropTemplateMixin and "BackdropTemplate")
-                slot.itemTextBorder:SetSize(292, 42) -- Slightly larger than the button
+                slot.itemTextBorder:SetSize(310, 42) -- Slightly larger than the button
                 slot.itemTextBorder:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 75,
                     -56 - (validSlotIndex * 40) + 90)
                 slot.itemTextBorder:SetBackdrop({
@@ -672,7 +713,7 @@ function BotEquippmentManagerMainFrame()
                 -- Store the slot in the slots table
                 botEquipmentFrame.slots[slotID] = slot
             else
-                print("Skipping slotID:", slotID, "due to exclusion.")
+                --print("Skipping slotID:", slotID, "due to exclusion.")
             end
         end
     end
@@ -706,56 +747,62 @@ function BotEquippmentManagerMainFrame()
         botBagItemsFrame.slots = {}
     end
 
-    -- Loop through rows and columns to create the 17 x 5 grid
-    for rowIndex = 1, 17 do
-        for colIndex = 1, 5 do
-            local slotIndex = (rowIndex - 1) * 5 + colIndex -- Unique index for each slot
-            if not botBagItemsFrame.slots[slotIndex] then
-                -- Create a slot in the BagFrame
-                local slot = CreateFrame("Button", nil, botBagItemsFrame)
-                slot:SetSize(30, 30) -- Adjust size of each slot
-                slot:SetPoint("TOPLEFT", botBagItemsFrame, "TOPLEFT", 150 + (colIndex - 1) * 45,
-                    -10 - (rowIndex - 1) * 40)
-                slot:EnableMouse(true)
+    -- Bag items template fill
+    local validBagSlotIndex = 0
+    for rowIndex = 1, 18 do
+        if (rowIndex ~= 4) then
+            validBagSlotIndex = validBagSlotIndex + 1
+            for colIndex = 1, 5 do
+                local slotIndex = (rowIndex - 1) * 5 + colIndex -- Unique index for each slot
+                if not botBagItemsFrame.slots[slotIndex] then
+                    -- Create a slot in the BagFrame
+                    local slot = CreateFrame("Button", nil, botBagItemsFrame)
+                    slot:SetSize(30, 30) -- Adjust size of each slot
+                    slot:SetPoint("TOPLEFT", botBagItemsFrame, "TOPLEFT", 170 + (colIndex - 1) * 45,
+                        -10 - (validBagSlotIndex - 1) * 40)
+                    slot:EnableMouse(true)
 
-                -- Add a default texture to the slot
-                local slotTexture = slot:CreateTexture(nil, "BACKGROUND")
-                slotTexture:SetAllPoints()
-                slotTexture:SetTexture("Interface/Buttons/UI-EmptySlot") -- Generic empty slot texture
+                    -- Add a default texture to the slot
+                    local slotTexture = slot:CreateTexture(nil, "BACKGROUND")
+                    slotTexture:SetAllPoints()
+                    slotTexture:SetTexture("Interface/Buttons/UI-EmptySlot") -- Generic empty slot texture
 
-                -- Tooltip functionality for empty slots
-                slot:SetScript("OnEnter", function(self)
-                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                    GameTooltip:AddLine("Empty Slot")
-                    GameTooltip:Show()
-                end)
-                slot:SetScript("OnLeave", function(self)
-                    GameTooltip:Hide()
-                end)
+                    -- Tooltip functionality for empty slots
+                    slot:SetScript("OnEnter", function(self)
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                        GameTooltip:AddLine("Empty Slot")
+                        GameTooltip:Show()
+                    end)
+                    slot:SetScript("OnLeave", function(self)
+                        GameTooltip:Hide()
+                    end)
 
-                -- Add left-click functionality
-                slot:SetScript("OnMouseDown", function(self, button)
-                    if button == "LeftButton" then
-                        -- Highlight effect for left-click
-                        slotTexture:SetPoint("TOPLEFT", self, "TOPLEFT", 2, -2)
-                        slotTexture:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -2, 2)
-                    end
-                end)
+                    -- Add left-click functionality
+                    slot:SetScript("OnMouseDown", function(self, button)
+                        if button == "LeftButton" then
+                            -- Highlight effect for left-click
+                            slotTexture:SetPoint("TOPLEFT", self, "TOPLEFT", 2, -2)
+                            slotTexture:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -2, 2)
+                        end
+                    end)
 
-                slot:SetScript("OnMouseUp", function(self, button)
-                    if button == "LeftButton" then
-                        -- Reset highlight effect
-                        slotTexture:SetPoint("TOPLEFT", self, "TOPLEFT", 0, 0)
-                        slotTexture:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 0, 0)
-                    end
-                end)
+                    slot:SetScript("OnMouseUp", function(self, button)
+                        if button == "LeftButton" then
+                            -- Reset highlight effect
+                            slotTexture:SetPoint("TOPLEFT", self, "TOPLEFT", 0, 0)
+                            slotTexture:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 0, 0)
+                        end
+                    end)
 
-                slot.rowIndex = rowIndex
-                slot.slotID = (rowIndex >= 4) and (rowIndex + 1) or rowIndex -- Map rowIndex to slotID
+                    slot.rowIndex = rowIndex
+                    slot.slotID = rowIndex -- Map rowIndex to slotID
 
-                -- Store the slot for future reuse
-                botBagItemsFrame.slots[slotIndex] = slot
+                    -- Store the slot for future reuse
+                    botBagItemsFrame.slots[slotIndex] = slot
+                end
             end
+        else
+            --print("SKip: ", rowIndex)
         end
     end
 
@@ -788,7 +835,7 @@ function BotEquippmentManagerMainFrame()
                     whisperDelayFrame.timeElapsed = 0 -- Reset timer
                     whisperDelayFrame:SetScript("OnUpdate", function(self, elapsed)
                         self.timeElapsed = self.timeElapsed + elapsed
-                        if self.timeElapsed >= 0.1 then -- 1-second timeout
+                        if self.timeElapsed >= 0.5 then -- 1-second timeout
                             -- Combine accumulated messages into a single string
                             local combinedMessage = table.concat(botInventoryMessages, " ")
                             -- UpdateBagFrame function placeholder

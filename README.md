@@ -12,7 +12,7 @@ Add a bot of a specific class:
 
 ![](docs/addclass.png)
 
-Equipment manager
+Equipment manager for bots
 
 ![](docs/eqmanager.png)
 

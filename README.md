@@ -8,9 +8,13 @@ Plugin interface display:
 
 ![](docs/display.png)
 
-Add a bot of a specific profession:
+Add a bot of a specific class:
 
 ![](docs/addclass.png)
+
+Equipment manager
+
+![](docs/eqmanager.png)
 
 * Removed all external dependencies
 * Strategy redone

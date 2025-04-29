@@ -1,7 +1,7 @@
 local chatBotInventoryListener = nil
-
+--Current target local variable
 local playerT = ""
--- Define the mapping for slots
+-- Item type mapping for char slots
 local slotMap = {
     ["INVTYPE_HEAD"] = 1,
     ["INVTYPE_NECK"] = 2,
@@ -29,7 +29,7 @@ local slotMap = {
 }
 local itemData = {}
 
--- Define slot names
+-- Define slot names (char slots)
 local slotNames = {
     [1] = "Head",
     [2] = "Neck",
@@ -59,7 +59,7 @@ local equipmentLoaded = false
 local equipmentTable = {}
 tempSlots = {} -- Table to store temporary affected slots on swap
 
--- Define the function at the top of your script or before it's needed
+-- Debug function for ptinting table contents (not used except for debugging)
 local function PrintTableContents(label, tbl)
     print(label)
     if tbl then
@@ -71,6 +71,7 @@ local function PrintTableContents(label, tbl)
     end
 end
 
+--Delay frame for update wait
 function WaitAndCheckFrameHidden(frame, timeout, callback)
     local startTime = GetTime() -- Record the start time
 
@@ -93,6 +94,7 @@ function WaitAndCheckFrameHidden(frame, timeout, callback)
     checkerFrame:Show() -- Activate the frame to start OnUpdate tracking
 end
 
+--Inspect char item table
 local function PrepareEquipmentTable()
     if not equipmentLoaded then
         for slotID = 1, 18 do
@@ -117,85 +119,7 @@ local function PrepareEquipmentTable()
     return equipmentTable
 end
 
-local function UpdateBotEquipmentFrame()
-    -- Prepare equipment data
-    equipmentData = PrepareEquipmentTable()
-
-    -- Populate equipment slots dynamically
-    for slotID, slotData in pairs(equipmentData) do
-        -- Retrieve the pre-created slot
-        local slot = botEquipmentFrame.slots[slotID]
-
-        if slot then
-            -- Update the slot's icon
-            slot.icon:SetTexture(slotData.itemTexture or "Interface/Icons/INV_Misc_QuestionMark")
-
-            -- Update the slot's item text
-            if slotData.itemID then
-                local itemName, itemLink, _, itemLevel, _, _, _, _, itemEquipLoc = GetItemInfo(slotData.itemID)
-                slot.itemText:GetFontString():SetText((itemLevel .. " " .. slotData.itemLink) or "Empty")
-            end
-
-            -- Update slot-specific data for functionality
-            slot.itemLink = slotData.itemLink -- Update the tooltip's itemLink
-            slot.itemID = slotData.itemID     -- Store the itemID for reference
-
-            -- Update tooltip functionality
-            slot.itemText:SetScript("OnEnter", function(self)
-                if slot.itemLink then
-                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                    GameTooltip:SetHyperlink(slot.itemLink)
-                    GameTooltip:Show()
-                end
-            end)
-            slot.itemText:SetScript("OnLeave", function()
-                GameTooltip:Hide()
-            end)
-
-            -- Update leftclick unequip action
-            slot.itemText:SetScript("OnClick", function(self, button)
-                if botMainInspectFrame and botMainInspectFrame:IsShown() then
-                    if button == "LeftButton" and slot.itemLink then
-                        local itemID = slot.itemID
-                        tempSlots[slotID] = {
-                            itemID = tonumber(itemID),
-                            itemLink = slot.itemLink,
-                            itemTexture = GetItemIcon(itemID),
-                        }
-                        -- Send unequip command to playerbot
-                        SendChatMessage("ue " .. slot.itemLink, "WHISPER", nil, UnitName(playerT))
-                        updateFrame:Show()
-                        -- Reset the slot dynamically when unequipped
-                        slot.icon:SetTexture("Interface/Icons/INV_Misc_QuestionMark")
-                        slot.itemText:GetFontString():SetText("Empty")
-                        slot.itemLink = nil
-                        slot.itemID = nil
-
-                        -- Clear the equipmentTable for this slot
-                        equipmentTable[slotID] = nil
-                        --print("Slot " .. slotID .. " cleared in equipmentTable.")
-                    end
-                end
-            end)
-        end
-    end
-
-    -- Reset unused slots (if not in equipmentData)
-    for slotID, slot in pairs(botEquipmentFrame.slots) do
-        if not equipmentData[slotID] then
-            -- Reset icon to default texture
-            slot.icon:SetTexture("Interface/Icons/INV_Misc_QuestionMark")
-
-            -- Reset item text to "Empty"
-            slot.itemText:GetFontString():SetText("Empty")
-
-            -- Clear slot-specific data
-            slot.itemLink = nil
-            slot.itemID = nil
-        end
-    end
-end
-
+--Inspect char bag items
 local function UpdateBagFrame(message, bagFrame)
     -- Validate the input message
     if not message or message == "" then
@@ -395,6 +319,87 @@ local function UpdateBagFrame(message, bagFrame)
     updateFrame:Hide()
 end
 
+--Inspec char wear items
+local function UpdateBotEquipmentFrame()
+    -- Prepare equipment data
+    equipmentData = PrepareEquipmentTable()
+
+    -- Populate equipment slots dynamically
+    for slotID, slotData in pairs(equipmentData) do
+        -- Retrieve the pre-created slot
+        local slot = botEquipmentFrame.slots[slotID]
+
+        if slot then
+            -- Update the slot's icon
+            slot.icon:SetTexture(slotData.itemTexture or "Interface/Icons/INV_Misc_QuestionMark")
+
+            -- Update the slot's item text
+            if slotData.itemID then
+                local itemName, itemLink, _, itemLevel, _, _, _, _, itemEquipLoc = GetItemInfo(slotData.itemID)
+                slot.itemText:GetFontString():SetText((itemLevel .. " " .. slotData.itemLink) or "Empty")
+            end
+
+            -- Update slot-specific data for functionality
+            slot.itemLink = slotData.itemLink -- Update the tooltip's itemLink
+            slot.itemID = slotData.itemID     -- Store the itemID for reference
+
+            -- Update tooltip functionality
+            slot.itemText:SetScript("OnEnter", function(self)
+                if slot.itemLink then
+                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                    GameTooltip:SetHyperlink(slot.itemLink)
+                    GameTooltip:Show()
+                end
+            end)
+            slot.itemText:SetScript("OnLeave", function()
+                GameTooltip:Hide()
+            end)
+
+            -- Update leftclick unequip action
+            slot.itemText:SetScript("OnClick", function(self, button)
+                if botMainInspectFrame and botMainInspectFrame:IsShown() then
+                    if button == "LeftButton" and slot.itemLink then
+                        local itemID = slot.itemID
+                        tempSlots[slotID] = {
+                            itemID = tonumber(itemID),
+                            itemLink = slot.itemLink,
+                            itemTexture = GetItemIcon(itemID),
+                        }
+                        -- Send unequip command to playerbot
+                        SendChatMessage("ue " .. slot.itemLink, "WHISPER", nil, UnitName(playerT))
+                        updateFrame:Show()
+                        -- Reset the slot dynamically when unequipped
+                        slot.icon:SetTexture("Interface/Icons/INV_Misc_QuestionMark")
+                        slot.itemText:GetFontString():SetText("Empty")
+                        slot.itemLink = nil
+                        slot.itemID = nil
+
+                        -- Clear the equipmentTable for this slot
+                        equipmentTable[slotID] = nil
+                        --print("Slot " .. slotID .. " cleared in equipmentTable.")
+                    end
+                end
+            end)
+        end
+    end
+
+    -- Reset unused slots (if not in equipmentData)
+    for slotID, slot in pairs(botEquipmentFrame.slots) do
+        if not equipmentData[slotID] then
+            -- Reset icon to default texture
+            slot.icon:SetTexture("Interface/Icons/INV_Misc_QuestionMark")
+
+            -- Reset item text to "Empty"
+            slot.itemText:GetFontString():SetText("Empty")
+
+            -- Clear slot-specific data
+            slot.itemLink = nil
+            slot.itemID = nil
+        end
+    end
+end
+
+--Target error handlers
 local function HandleInvalidTarget(message)
     print(message)
     if botMainInspectFrame then
@@ -407,6 +412,7 @@ local function HandleInvalidTarget(message)
     end
 end
 
+--Main function
 function BotEquippmentManagerMainFrame()
     -- Perform target checks
     if not UnitIsPlayer("target") then
@@ -718,7 +724,7 @@ function BotEquippmentManagerMainFrame()
         end
     end
 
-    -- Refresh content dynamically
+    -- Refresh content
     UpdateBotEquipmentFrame()
 
     -- Create the BagFrame
@@ -742,7 +748,7 @@ function BotEquippmentManagerMainFrame()
 
     botBagItemsFrame:Show()
 
-    -- Initialize the slots table if it doesn't exist
+    -- Initialize the bag slots table if it doesn't exist
     if not botBagItemsFrame.slots then
         botBagItemsFrame.slots = {}
     end
@@ -806,14 +812,14 @@ function BotEquippmentManagerMainFrame()
         end
     end
 
-    -- Initialize the whisper delay frame
+    -- Initialize the whisper delay frame for bag items retreival
     if not whisperDelayFrame then
         whisperDelayFrame = CreateFrame("Frame")
         whisperDelayFrame.timeElapsed = 0
         whisperDelayFrame:SetScript("OnUpdate", nil) -- Initially disabled
     end
 
-    -- Accumulate whispers in a table
+    -- Accumulate bot bag content whispers in a table
     botInventoryMessages = botInventoryMessages or {}
 
     -- Create or manage the chat listener for BagFrame

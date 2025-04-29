@@ -336,7 +336,9 @@ local function UpdateBotEquipmentFrame()
             -- Update the slot's item text
             if slotData.itemID then
                 local itemName, itemLink, _, itemLevel, _, _, _, _, itemEquipLoc = GetItemInfo(slotData.itemID)
-                slot.itemText:GetFontString():SetText((itemLevel .. " " .. slotData.itemLink) or "Empty")
+                slot.itemText:GetFontString():SetText(itemLevel .. " " .. slotData.itemLink)
+            else
+                slot.itemText:GetFontString():SetText("Empty")
             end
 
             -- Update slot-specific data for functionality

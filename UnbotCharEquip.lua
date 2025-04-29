@@ -98,8 +98,8 @@ end
 local function PrepareEquipmentTable()
     if not equipmentLoaded then
         for slotID = 1, 18 do
-            if slotID ~= 4 then                               -- Skip Shirt slot (Slot ID 4)
-                GameTooltip:SetInventoryItem(playerT, slotID) -- Force tooltip cache
+            if slotID ~= 4 then -- Skip Shirt slot (Slot ID 4)
+                --GameTooltip:SetInventoryItem(playerT, slotID) -- Force tooltip cache
                 local itemLink = GetInventoryItemLink(playerT, slotID)
                 local itemTexture = GetInventoryItemTexture(playerT, slotID)
                 local itemID = itemLink and string.match(itemLink, "Hitem:(%d+):")
@@ -160,7 +160,7 @@ local function UpdateBagFrame(message, bagFrame)
             end
         else
             -- Attempt to cache uncached items (optional)
-            GameTooltip:SetHyperlink("item:" .. numericItemID)
+            --GameTooltip:SetHyperlink("item:" .. numericItemID)
         end
     end
 
@@ -180,9 +180,10 @@ local function UpdateBagFrame(message, bagFrame)
                     local slotTexture = slot:GetRegions() -- Retrieve the slot's existing texture
                     if itemData.itemLink then
                         --print("Found item in bag: ", itemData.itemLink)
-                        local _, _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(itemData.itemLink)
+                        local _, _, _, itemLevel, _, _, _, _, _, itemTexture = GetItemInfo(itemData.itemLink)
                         if itemTexture then
-                            slotTexture:SetTexture(itemTexture)                             -- Use item texture
+                            slotTexture:SetTexture(itemTexture) -- Use item texture
+                            slot.slotIlvl:SetText(itemLevel)
                         else
                             slotTexture:SetTexture("Interface/Icons/INV_Misc_QuestionMark") -- Default for uncached items
                         end
@@ -293,6 +294,7 @@ local function UpdateBagFrame(message, bagFrame)
                     else
                         -- Reset to default texture for empty slots
                         slotTexture:SetTexture("Interface/Buttons/UI-EmptySlot")
+                        slot.slotIlvl:SetText("")
 
                         -- Reset tooltip
                         slot:SetScript("OnEnter", function(self)
@@ -555,7 +557,7 @@ function BotEquippmentManagerMainFrame()
         local leftLabelHelp = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         leftLabelHelp:SetPoint("TOP", botMainInspectFrame, "TOP", -140, -40)
         leftLabelHelp:SetText("Left click on item link\nto store item in bag")
-        leftLabelHelp:SetTextColor(0, 1, 0) --Green
+        --leftLabelHelp:SetTextColor(0, 1, 0) --Green
         leftLabelHelp:SetJustifyH("LEFT")
         leftLabelHelp:SetWidth(200)
         --Items in bags label
@@ -570,7 +572,7 @@ function BotEquippmentManagerMainFrame()
         rightLabelHelp:SetPoint("TOP", botMainInspectFrame, "TOP", 198, -40)
         rightLabelHelp:SetText(
             "Left click on icon to equip item\nRight click to equip slot 2 for\nFinger 2, Trinket 2 and OH Wpn")
-        rightLabelHelp:SetTextColor(0, 1, 0) --Green
+        --rightLabelHelp:SetTextColor(0, 1, 0) --Green
         rightLabelHelp:SetJustifyH("LEFT")
         rightLabelHelp:SetWidth(200)
 
@@ -664,6 +666,10 @@ function BotEquippmentManagerMainFrame()
                 slot.itemText:SetHighlightFontObject(GameFontNormal)
                 slot.itemText:GetFontString():SetPoint("LEFT", slot.itemText, "LEFT", 5, 0)
                 slot.itemText:SetAlpha(1) -- Ensure button text is fully opaque
+                local fontString = slot.itemText:GetFontString()
+                if fontString then
+                    fontString:SetTextColor(0, 1, 0) -- Set the text color to green
+                end
                 -- Tooltip functionality
                 slot.itemText:SetScript("OnEnter", function(self)
                     if slot.itemLink then
@@ -774,6 +780,13 @@ function BotEquippmentManagerMainFrame()
                     local slotTexture = slot:CreateTexture(nil, "BACKGROUND")
                     slotTexture:SetAllPoints()
                     slotTexture:SetTexture("Interface/Buttons/UI-EmptySlot") -- Generic empty slot texture
+
+                    --Add default Item lvl txt label
+                    slot.slotIlvl = slot:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+                    slot.slotIlvl:SetPoint("BOTTOM", slot, "BOTTOM", 0, -10) -- Position below the slot
+                    slot.slotIlvl:SetText("")                                -- Default text
+                    slot.slotIlvl:SetAlpha(1)                                -- Ensure visibility
+                    slot.slotIlvl:SetTextColor(0, 1, 0)                      -- Set text color to white
 
                     -- Tooltip functionality for empty slots
                     slot:SetScript("OnEnter", function(self)

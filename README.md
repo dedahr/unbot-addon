@@ -1,4 +1,4 @@
-## UnBot for AzerothCore Module
+## UnBot for AzerothCore Module [(modified from noisiver ENG version)](https://github.com/noisiver/unbot-addon)
 
 A bot control plugin modified based on the UnBot plugin. As a supporting plugin for the AzerothCore Playerbot module, it is convenient for players to control bots.
 

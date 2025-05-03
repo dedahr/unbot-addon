@@ -113,6 +113,12 @@ function InitializeUnBotFrame()
 		ResetCommandToAction(groupButton, UnBotCommandBarConfig[i], false);
 	end
 	UnBotUpdateHotkeys();
+	--PbExtension
+	PbExtension = PbExtension or {}
+	PbExtension.toggleState = PbExtension.toggleState or false
+	if _G["toggleButton"] then
+		_G["toggleButton"]:SetText(PbExtension.toggleState and "PbExtension ON" or "PbExtension OFF")
+	end
 
 	--InitializeStrategy();
 

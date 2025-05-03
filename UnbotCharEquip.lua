@@ -1,6 +1,10 @@
 local chatBotInventoryListener = nil
 --Current target local variable
 local playerT = ""
+-- Variable to store toggle state
+--PbExtension = PbExtension or {}
+--local toggleState = PbExtension.toggleState or false
+
 -- Item type mapping for char slots
 local slotMap = {
     ["INVTYPE_HEAD"] = 1,
@@ -27,6 +31,7 @@ local slotMap = {
     ["INVTYPE_RELIC"] = 18,
     ["INVTYPE_HOLDABLE"] = 18,
 }
+
 local itemData = {}
 
 -- Define slot names (char slots)
@@ -41,13 +46,13 @@ local slotNames = {
     [8] = "Feet",
     [9] = "Wrist",
     [10] = "Hands",
-    [11] = "Finger 1",
-    [12] = "Finger 2",
-    [13] = "Trinket 1",
-    [14] = "Trinket 2",
+    [11] = "Finger1",
+    [12] = "Finger2",
+    [13] = "Trinket1",
+    [14] = "Trinket2",
     [15] = "Back",
-    [16] = "Main Hand",
-    [17] = "Off Hand",
+    [16] = "MainHand",
+    [17] = "OffHand",
     [18] = "Ranged"
 }
 
@@ -57,7 +62,18 @@ local wearableItems = {}
 -- We don't want to requery on every eq change
 local equipmentLoaded = false
 local equipmentTable = {}
+
 tempSlots = {} -- Table to store temporary affected slots on swap
+
+local function getKeyFromTable(tableName, targetValue)
+    for key, value in pairs(tableName) do -- Corrected table reference
+        if value == targetValue then
+            print(key)
+            return key -- Return the matching key
+        end
+    end
+    return "UNKNOWN_SLOT" -- Fallback if no match is found
+end
 
 -- Debug function for ptinting table contents (not used except for debugging)
 local function PrintTableContents(label, tbl)
@@ -115,6 +131,13 @@ local function PrepareEquipmentTable()
         -- Load the equipment data only once
         equipmentLoaded = true
     end
+
+    --Debug
+    -- for slotID, data in pairs(equipmentTable) do
+    --     print(string.format("Slot %d - ID: %s | Link: %s | Texture: %s",
+    --         slotID, tostring(data.itemID), tostring(data.itemLink), tostring(data.itemTexture)))
+    -- end
+
 
     return equipmentTable
 end
@@ -216,7 +239,10 @@ local function UpdateBagFrame(message, bagFrame)
                                     print("Error: slotID is not defined for this slot.")
                                     return
                                 end
-                                SendChatMessage("e " .. capturedItemLink, "WHISPER", nil, UnitName(playerT))
+                                --print("e " .. string.lower(slotNames[slotID]) .. " " .. capturedItemLink)
+                                SendChatMessage("e " .. string.lower(slotNames[slotID]) .. " " .. capturedItemLink,
+                                    "WHISPER", nil, UnitName(playerT))
+
                                 updateFrame:Show()
                                 WaitAndCheckFrameHidden(updateFrame, 5, function(result)
                                     if not result then
@@ -230,7 +256,7 @@ local function UpdateBagFrame(message, bagFrame)
                                     local itemID = string.match(capturedItemLink, "Hitem:(%d+):")
 
                                     if itemID then
-                                        if tempSlots[slotID] then
+                                        if tempSlots[slotID] and tempSlots[slotID].itemID == itemID then
                                             equipmentTable[slotID] = tempSlots[slotID]
                                             tempSlots[slotID] = nil
                                         else
@@ -260,7 +286,14 @@ local function UpdateBagFrame(message, bagFrame)
 
                                 if capturedItemLink then
                                     local itemID = string.match(capturedItemLink, "Hitem:(%d+):")
-                                    SendChatMessage("e " .. capturedItemLink, "WHISPER", nil, UnitName(playerT))
+                                    if PbExtension.toggleState then
+                                        SendChatMessage(string.lower(slotNames[slotID + 1]) ..
+                                            " " .. capturedItemLink, "SAY")
+                                    else
+                                        SendChatMessage("e " .. string.lower(slotNames[slotID + 1]) ..
+                                            " " .. capturedItemLink,
+                                            "WHISPER", nil, UnitName(playerT))
+                                    end
                                     updateFrame:Show()
                                     WaitAndCheckFrameHidden(updateFrame, 5, function(result)
                                         if not result then
@@ -273,7 +306,7 @@ local function UpdateBagFrame(message, bagFrame)
                                     if itemID then
                                         -- Use slotID + 1 for equipmentTable assignment
                                         local newSlotID = slotID + 1
-                                        if tempSlots[slotID] then
+                                        if tempSlots[slotID] and tempSlots[slotID].itemID == itemID then
                                             equipmentTable[newSlotID] = tempSlots[slotID]
                                             tempSlots[slotID] = nil
                                         else
@@ -538,18 +571,10 @@ function BotEquippmentManagerMainFrame()
         local titleText = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         titleText:SetPoint("TOP", botMainInspectFrame, "TOP", 0, -10)
         botMainInspectFrame.titleText = titleText
-        -- Class label
-        local classText = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        classText:SetPoint("TOP", titleText, "BOTTOM", 0, -10)
-        botMainInspectFrame.classText = classText
-        --Level label
-        local levelText = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        levelText:SetPoint("TOP", classText, "BOTTOM", 0, -5)
-        botMainInspectFrame.levelText = levelText
-        --Player equipment label
+        --Bot equipment label
         local leftLabel = botMainInspectFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         leftLabel:SetPoint("TOP", botMainInspectFrame, "TOP", -140, -28)
-        leftLabel:SetText("Player equipment")
+        leftLabel:SetText("Bot equipment")
         leftLabel:SetTextColor(1, 0, 0) --Red
         leftLabel:SetJustifyH("LEFT")
         leftLabel:SetWidth(200)
@@ -597,6 +622,50 @@ function BotEquippmentManagerMainFrame()
         local updateText = updateFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         updateText:SetPoint("CENTER", updateFrame, "CENTER", 0, 0)
         updateText:SetText("Updating...")
+
+        -- Create the Refresh button
+        local refreshButton = CreateFrame("Button", nil, botMainInspectFrame, "UIPanelButtonTemplate")
+        refreshButton:SetSize(130, 30)                                            -- Width: 100, Height: 30
+        refreshButton:SetPoint("BOTTOM", botMainInspectFrame, "BOTTOM", -65, -25) -- Position it at the bottom of the frame
+        refreshButton:SetText("Refresh")                                          -- Set button text
+        -- Left-click action (you can add your functionality here)
+        refreshButton:SetScript("OnClick", function(self, button)
+            if button == "LeftButton" then
+                BotEquippmentManagerMainFrame()
+            end
+        end)
+        -- Add Tooltip
+        refreshButton:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT")       -- Position tooltip
+            GameTooltip:SetText("Refresh in case of weirdness") -- Set your text
+            GameTooltip:Show()
+        end)
+        refreshButton:SetScript("OnLeave", function()
+            GameTooltip:Hide() -- Hide tooltip when mouse leaves
+        end)
+
+        -- ToggleButton PbExtensions
+        _G["toggleButton"] = CreateFrame("Button", nil, botMainInspectFrame, "UIPanelButtonTemplate")
+        local toggleButton = _G["toggleButton"] -- Assign global reference for local use
+        toggleButton:SetSize(130, 30)
+        toggleButton:SetPoint("BOTTOM", botMainInspectFrame, "BOTTOM", 65, -25)
+        toggleButton:SetText(PbExtension.toggleState and "PbExtension ON" or "PbExtension OFF") -- Set initial text
+        -- Toggle button functionality (saves state)
+        toggleButton:SetScript("OnClick", function(self, button)
+            if button == "LeftButton" then
+                PbExtension.toggleState = not PbExtension.toggleState -- Switch state
+                self:SetText(PbExtension.toggleState and "PbExtension ON" or "PbExtension OFF")
+            end
+        end)
+        -- Add Tooltip
+        toggleButton:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT")             -- Position tooltip
+            GameTooltip:SetText("Enable if using PbExtension module") -- Set your text
+            GameTooltip:Show()
+        end)
+        toggleButton:SetScript("OnLeave", function()
+            GameTooltip:Hide() -- Hide tooltip when mouse leaves
+        end)
     end
 
     --Re-register event if needed
@@ -614,10 +683,8 @@ function BotEquippmentManagerMainFrame()
     updateFrame:Show()
 
     -- Update title and target details
-    botMainInspectFrame.titleText:SetText(UnitName(playerT))
-    local targetClass, _ = UnitClass(playerT)
-    botMainInspectFrame.classText:SetText(targetClass)
-    botMainInspectFrame.levelText:SetText("Level: " .. UnitLevel(playerT))
+    botMainInspectFrame.titleText:SetText(UnitName(playerT) .. "  " .. UnitRace(playerT) ..
+        " " .. UnitClass(playerT) .. "(" .. UnitLevel(playerT) .. ")")
 
     -- Create content area for player equipment
     if not botEquipmentFrame then
@@ -710,19 +777,6 @@ function BotEquippmentManagerMainFrame()
                 slot.icon:SetPoint("TOPLEFT", botEquipmentFrame, "TOPLEFT", 80, -55 - (validSlotIndex * 40) + 82)
                 slot.icon:SetTexture("Interface/Icons/INV_Misc_QuestionMark")
                 slot.icon:SetAlpha(1) -- Ensure icon is fully opaque
-
-                -- Create the Refresh button
-                local refreshButton = CreateFrame("Button", nil, botEquipmentFrame, "UIPanelButtonTemplate")
-                refreshButton:SetSize(130, 30)                                          -- Width: 100, Height: 30
-                refreshButton:SetPoint("BOTTOM", botEquipmentFrame, "BOTTOM", 100, -30) -- Position it at the bottom of the frame
-                refreshButton:SetText("Refresh")                                        -- Set button text
-
-                -- Left-click action (you can add your functionality here)
-                refreshButton:SetScript("OnClick", function(self, button)
-                    if button == "LeftButton" then
-                        BotEquippmentManagerMainFrame()
-                    end
-                end)
 
                 -- Store the slot in the slots table
                 botEquipmentFrame.slots[slotID] = slot
@@ -848,7 +902,10 @@ function BotEquippmentManagerMainFrame()
     chatBotInventoryListener:SetScript("OnEvent", function(_, _, message, sender)
         -- Ensure the main frame is visible before handling messages
         if botMainInspectFrame and botMainInspectFrame:IsShown() then
-            if sender == UnitName(playerT) and string.match(message, "%[.+%]") and not string.find(message, "Equipping") and not string.find(message, "unequipped") then
+            if sender == UnitName(playerT) and string.match(message, "%[.+%]")
+                and not string.find(message, "Equipping")
+                and not string.find(message, "unequipped")
+                and not string.find(message, "upgrade found") then
                 -- Accumulate each whisper message
                 table.insert(botInventoryMessages, message)
                 -- Start or restart the whisper delay timer

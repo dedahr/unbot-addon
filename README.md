@@ -21,6 +21,6 @@ Equipment manager for bots
 * Some bugs fixed
 * Obosolete bot commands fixed to follow current PB state
 * Some personal flavoring added to Inventory and Icons forms
-* Added quick bot equipment manager (no more juggling around), still in progress, old inventory manager still works
+* Added quick bot equipment manager (no more juggling around, best experience with [mod-PbExtensions](https://github.com/dedahr/mod-pbextensions)), still in progress, old inventory manager still works.
 * and whtever I forgot to remember....
 * en-US or en-GB version only
